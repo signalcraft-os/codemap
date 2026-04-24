@@ -17,6 +17,36 @@ import { writeOutput, computeCrudGroups } from "./formatter.js";
 import { analyzeBlastRadius, analyzeMultiFileBlastRadius } from "./detectors/blast-radius.js";
 import { readWikiArticle, listWikiArticles, lintWiki } from "./generators/wiki.js";
 import type { ScanResult } from "./types.js";
+import { publishCodeCodemap } from "./codemap/publish/code-pipeline.js";
+import { publishKnowledgeCodemap } from "./codemap/publish/knowledge-pipeline.js";
+import {
+  formatCodemapClaim,
+  formatCodemapClaimHistory,
+  formatCodemapKnowledgeOverview,
+  formatCodemapPublishRun,
+  formatCodemapPublishStatus,
+  formatCodemapSnapshotDiff,
+  formatCodemapClaimStateHistory,
+  formatCodemapConflicts,
+  formatCodemapEvidence,
+  formatCodemapOverview,
+  formatCodemapSearchClaims,
+  formatCodemapVerifyClaim,
+  getCodemapClaim,
+  getCodemapClaimEvidence,
+  getCodemapClaimHistory,
+  getCodemapKnowledgeOverview,
+  getCodemapPublishRun,
+  getCodemapPublishStatus,
+  getCodemapDiffSinceSnapshot,
+  getCodemapClaimStateHistory,
+  getCodemapConflicts,
+  getCodemapOverview,
+  getCodemapVerifyClaim,
+  loadCodemapQueryContext,
+  searchCodemapKnowledge,
+  searchCodemapClaims,
+} from "./codemap/mcp/index.js";
 
 /**
  * MCP server with 8 specialized tools for AI assistants.
@@ -108,6 +138,55 @@ async function getScanResult(directory?: string): Promise<ScanResult> {
   cachedResult = { ...tempResult, tokenStats };
   cachedRoot = root;
   return cachedResult;
+}
+
+async function ensureCodemapMaterialized(directory?: string, refresh = false): Promise<string> {
+  const root = resolve(directory || process.cwd());
+
+  if (refresh) {
+    cachedResult = null;
+    cachedRoot = null;
+  }
+
+  let context = await loadCodemapQueryContext(root);
+  if (context.claims.length > 0 && !refresh) {
+    return root;
+  }
+
+  const result = await getScanResult(root);
+  await publishCodeCodemap(result, {
+    outputDirName: ".codesight",
+    trigger: "mcp",
+  });
+  context = await loadCodemapQueryContext(root);
+
+  return root;
+}
+
+function isKnowledgeClaimType(value: unknown): value is string {
+  return typeof value === "string" && value.startsWith("knowledge_");
+}
+
+async function collectProjectFiles(root: string): Promise<string[]> {
+  const userConfig = await loadConfig(root);
+  const ignoreFromFile = await readCodesightIgnore(root);
+  const allIgnore = [...(userConfig.ignorePatterns ?? []), ...ignoreFromFile];
+  return collectFiles(root, userConfig.maxDepth ?? 10, allIgnore);
+}
+
+async function ensureKnowledgeCodemapMaterialized(directory?: string, refresh = false): Promise<string> {
+  const root = resolve(directory || process.cwd());
+  const context = await loadCodemapQueryContext(root);
+  if (!refresh && context.claims.some((claim) => claim.type.startsWith("knowledge_"))) {
+    return root;
+  }
+
+  const files = await collectProjectFiles(root);
+  await publishKnowledgeCodemap(root, files, {
+    outputDirName: ".codesight",
+    trigger: "mcp",
+  });
+  return root;
 }
 
 // =================== TOOL IMPLEMENTATIONS ===================
@@ -430,8 +509,278 @@ async function toolGetKnowledge(args: any): Promise<string> {
   try {
     return await readFile(knowledgePath, "utf8");
   } catch {
+    try {
+      const root = await ensureKnowledgeCodemapMaterialized(dir, Boolean(args.refresh));
+      return await readFile(join(root, ".codemap", "compatibility", "KNOWLEDGE.md"), "utf8");
+    } catch {
+      // Fall through to the legacy guidance message below.
+    }
     return `Knowledge map not found. Run \`npx codesight --mode knowledge\` in ${dir} to generate it.\n\nThis scans all .md/.mdx files and extracts decisions, open questions, people, and recurring themes into a compact AI context file.`;
   }
+}
+
+function getCodemapScopeArgs(args: any) {
+  return {
+    changed_files: Array.isArray(args.changed_files)
+      ? args.changed_files.filter((entry: unknown): entry is string => typeof entry === "string" && entry.trim().length > 0)
+      : undefined,
+    impact_depth: typeof args.impact_depth === "number" ? args.impact_depth : undefined,
+    source_path: typeof args.source_path === "string" ? args.source_path : undefined,
+  };
+}
+
+function hasCodemapScopeArgs(args: any): boolean {
+  return Boolean(
+    (typeof args.source_path === "string" && args.source_path.trim().length > 0)
+    || (Array.isArray(args.changed_files) && args.changed_files.some((entry: unknown) => typeof entry === "string" && entry.trim().length > 0))
+    || typeof args.impact_depth === "number",
+  );
+}
+
+async function toolCodemapGetOverview(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let overview = await getCodemapOverview(root, getCodemapScopeArgs(args));
+  if (overview.totalClaims === 0) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    overview = await getCodemapOverview(root, getCodemapScopeArgs(args));
+  }
+  if (overview.totalClaims === 0) {
+    if (hasCodemapScopeArgs(args)) {
+      return "No CodeMap claims matched the supplied scope.";
+    }
+    return toolGetSummary(args);
+  }
+  return formatCodemapOverview(overview);
+}
+
+async function toolCodemapSearchClaims(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let result = await searchCodemapClaims(root, {
+    query: args.query,
+    type: args.type,
+    status: args.status,
+    tag: args.tag,
+    limit: args.limit,
+    ...getCodemapScopeArgs(args),
+  });
+  if (
+    result.totalMatches === 0
+    && (!args.type || isKnowledgeClaimType(args.type) || args.tag === "knowledge")
+  ) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    result = await searchCodemapClaims(root, {
+      query: args.query,
+      type: args.type,
+      status: args.status,
+      tag: args.tag,
+      limit: args.limit,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+  return formatCodemapSearchClaims(result);
+}
+
+async function toolCodemapGetClaim(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let detail = await getCodemapClaim(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    ...getCodemapScopeArgs(args),
+  });
+  if (!detail) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    detail = await getCodemapClaim(root, {
+      claim_id: args.claim_id,
+      subject: args.subject,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+
+  if (!detail) {
+    return "Claim not found. Provide claim_id or subject from codemap_search_claims.";
+  }
+
+  return formatCodemapClaim(detail);
+}
+
+async function toolCodemapGetClaimEvidence(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let response = await getCodemapClaimEvidence(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    ...getCodemapScopeArgs(args),
+  });
+  if (!response) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    response = await getCodemapClaimEvidence(root, {
+      claim_id: args.claim_id,
+      subject: args.subject,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+
+  if (!response) {
+    return "Claim not found. Provide claim_id or subject from codemap_search_claims.";
+  }
+
+  const detail = await getCodemapClaim(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    ...getCodemapScopeArgs(args),
+  });
+
+  return formatCodemapEvidence(response, detail?.snapshots ?? []);
+}
+
+async function toolCodemapGetClaimHistory(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let response = await getCodemapClaimHistory(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    limit: args.limit,
+    ...getCodemapScopeArgs(args),
+  });
+  if (!response) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    response = await getCodemapClaimHistory(root, {
+      claim_id: args.claim_id,
+      subject: args.subject,
+      limit: args.limit,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+
+  if (!response) {
+    return "Claim not found. Provide claim_id or subject from codemap_search_claims.";
+  }
+
+  return formatCodemapClaimHistory(response);
+}
+
+async function toolCodemapGetClaimStateHistory(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let response = await getCodemapClaimStateHistory(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    limit: args.limit,
+    ...getCodemapScopeArgs(args),
+  });
+  if (!response) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    response = await getCodemapClaimStateHistory(root, {
+      claim_id: args.claim_id,
+      subject: args.subject,
+      limit: args.limit,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+
+  if (!response) {
+    return "Claim not found. Provide claim_id or subject from codemap_search_claims.";
+  }
+
+  return formatCodemapClaimStateHistory(response);
+}
+
+async function toolCodemapVerifyClaim(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let response = await getCodemapVerifyClaim(root, {
+    claim_id: args.claim_id,
+    subject: args.subject,
+    ...getCodemapScopeArgs(args),
+  });
+  if (!response) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    response = await getCodemapVerifyClaim(root, {
+      claim_id: args.claim_id,
+      subject: args.subject,
+      ...getCodemapScopeArgs(args),
+    });
+  }
+
+  if (!response) {
+    return "Claim not found. Provide claim_id or subject from codemap_search_claims.";
+  }
+
+  return formatCodemapVerifyClaim(response);
+}
+
+async function toolCodemapDiffSinceSnapshot(args: any): Promise<string> {
+  let root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  let response = await getCodemapDiffSinceSnapshot(root, {
+    snapshot_id: args.snapshot_id,
+    source_path: args.source_path,
+    claim_limit: args.claim_limit,
+  });
+  if (!response) {
+    root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+    response = await getCodemapDiffSinceSnapshot(root, {
+      snapshot_id: args.snapshot_id,
+      source_path: args.source_path,
+      claim_limit: args.claim_limit,
+    });
+  }
+
+  if (!response) {
+    return "Snapshot not found. Provide snapshot_id or an active source_path from CodeMap.";
+  }
+
+  return formatCodemapSnapshotDiff(response);
+}
+
+async function toolCodemapGetKnowledgeOverview(args: any): Promise<string> {
+  const root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+  const overview = await getCodemapKnowledgeOverview(root, {
+    include_summaries: args.include_summaries,
+    ...getCodemapScopeArgs(args),
+  });
+  return formatCodemapKnowledgeOverview(overview);
+}
+
+async function toolCodemapSearchKnowledge(args: any): Promise<string> {
+  const root = await ensureKnowledgeCodemapMaterialized(args.directory, Boolean(args.refresh));
+  const result = await searchCodemapKnowledge(root, {
+    query: args.query,
+    kind: args.kind,
+    status: args.status,
+    tag: args.tag,
+    limit: args.limit,
+    ...getCodemapScopeArgs(args),
+  });
+  return formatCodemapSearchClaims(result);
+}
+
+async function toolCodemapGetPublishRun(args: any): Promise<string> {
+  const root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  const response = await getCodemapPublishRun(root, {
+    run_id: args.run_id,
+    latest: args.latest,
+    claim_limit: args.claim_limit,
+    verification_limit: args.verification_limit,
+  });
+
+  if (!response) {
+    return "No CodeMap publish runs found.";
+  }
+
+  return formatCodemapPublishRun(response);
+}
+
+async function toolCodemapGetConflicts(args: any): Promise<string> {
+  const root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  const result = await getCodemapConflicts(root, {
+    claim_id: args.claim_id,
+    severity: args.severity,
+    limit: args.limit,
+    ...getCodemapScopeArgs(args),
+  });
+  return formatCodemapConflicts(result);
+}
+
+async function toolCodemapGetPublishStatus(args: any): Promise<string> {
+  const root = await ensureCodemapMaterialized(args.directory, Boolean(args.refresh));
+  const status = await getCodemapPublishStatus(root);
+  return formatCodemapPublishStatus(status);
 }
 
 // =================== TOOL DEFINITIONS ===================
@@ -544,6 +893,278 @@ const TOOLS = [
     handler: toolRefresh,
   },
   {
+    name: "codemap_get_overview",
+    description:
+      "Get a canonical CodeMap overview derived from claims, verification records, and conflicts. Generates .codemap on demand if it is missing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope claims through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading CodeMap claims" },
+      },
+    },
+    handler: toolCodemapGetOverview,
+  },
+  {
+    name: "codemap_get_knowledge_overview",
+    description:
+      "Get a canonical knowledge-focused CodeMap overview derived from note-backed claims such as decisions, questions, themes, people, and summaries.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        include_summaries: { type: "boolean", description: "Include recent note summary claims in the overview (default: true)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope knowledge claims through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh note scan and republish before reading knowledge claims" },
+      },
+    },
+    handler: toolCodemapGetKnowledgeOverview,
+  },
+  {
+    name: "codemap_search_claims",
+    description:
+      "Search canonical CodeMap claims by free-text query, type, status, or tag. Use this instead of grepping markdown when you need typed claim results.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        query: { type: "string", description: "Free-text query matched against claim ids, subjects, text, types, and tags" },
+        type: { type: "string", description: "Optional claim type filter (route, model, relation, component, etc.)" },
+        status: { type: "string", description: "Optional status filter (verified, inferred, stale, quarantined, etc.)" },
+        tag: { type: "string", description: "Optional tag filter" },
+        limit: { type: "number", description: "Maximum number of claims to return (default: 10, max: 50)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope matches through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before searching" },
+      },
+    },
+    handler: toolCodemapSearchClaims,
+  },
+  {
+    name: "codemap_search_knowledge",
+    description:
+      "Search canonical note-backed knowledge claims. Use this for decisions, open questions, people, themes, and note summaries without grepping markdown.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        query: { type: "string", description: "Free-text query matched against knowledge claim ids, subjects, text, types, and tags" },
+        kind: { type: "string", description: "Optional knowledge claim type filter (knowledge_decision, knowledge_question, knowledge_theme, knowledge_person, knowledge_summary)" },
+        status: { type: "string", description: "Optional status filter (verified, inferred, stale, quarantined, etc.)" },
+        tag: { type: "string", description: "Optional tag filter" },
+        limit: { type: "number", description: "Maximum number of claims to return (default: 10, max: 50)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope knowledge matches through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh note scan and republish before searching" },
+      },
+    },
+    handler: toolCodemapSearchKnowledge,
+  },
+  {
+    name: "codemap_get_claim",
+    description:
+      "Get one canonical CodeMap claim with its snapshots, evidence spans, verification records, and conflicts. Provide claim_id or subject.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Exact CodeMap claim id" },
+        subject: { type: "string", description: "Claim subject lookup when claim_id is unknown" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope lookup through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading the claim" },
+      },
+    },
+    handler: toolCodemapGetClaim,
+  },
+  {
+    name: "codemap_get_claim_evidence",
+    description:
+      "Get the evidence spans for a canonical CodeMap claim. Provide claim_id or subject to inspect the backing source locations.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Exact CodeMap claim id" },
+        subject: { type: "string", description: "Claim subject lookup when claim_id is unknown" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope evidence lookup through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading evidence" },
+      },
+    },
+    handler: toolCodemapGetClaimEvidence,
+  },
+  {
+    name: "codemap_get_claim_history",
+    description:
+      "Get verification audit history for one canonical CodeMap claim. Use this when you need the long-form revalidation trail instead of just the current active verification state.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Exact CodeMap claim id" },
+        subject: { type: "string", description: "Claim subject lookup when claim_id is unknown" },
+        limit: { type: "number", description: "Maximum number of history entries to return (default: 20, max: 100)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope history lookup through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading history" },
+      },
+    },
+    handler: toolCodemapGetClaimHistory,
+  },
+  {
+    name: "codemap_get_claim_state_history",
+    description:
+      "Get claim-state audit history for one canonical CodeMap claim. Use this to inspect lifecycle transitions such as verified, stale, quarantined, or revised over time.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Exact CodeMap claim id" },
+        subject: { type: "string", description: "Claim subject lookup when claim_id is unknown" },
+        limit: { type: "number", description: "Maximum number of history entries to return (default: 20, max: 100)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope state history lookup through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading state history" },
+      },
+    },
+    handler: toolCodemapGetClaimStateHistory,
+  },
+  {
+    name: "codemap_verify_claim",
+    description:
+      "Inspect the current verification posture of one canonical CodeMap claim, including live workspace drift against its stored source snapshots.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Exact CodeMap claim id" },
+        subject: { type: "string", description: "Claim subject lookup when claim_id is unknown" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope verification lookup through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading verification state" },
+      },
+    },
+    handler: toolCodemapVerifyClaim,
+  },
+  {
+    name: "codemap_diff_since_snapshot",
+    description:
+      "Compare one active CodeMap source snapshot against the current workspace file content. Provide snapshot_id or an active source_path to inspect drift and affected claims.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        snapshot_id: { type: "string", description: "Exact active CodeMap snapshot id" },
+        source_path: { type: "string", description: "Active source file path when snapshot_id is unknown" },
+        claim_limit: { type: "number", description: "Maximum number of affected claims to return (default: 10, max: 50)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before resolving the active snapshot" },
+      },
+    },
+    handler: toolCodemapDiffSinceSnapshot,
+  },
+  {
+    name: "codemap_get_publish_run",
+    description:
+      "Inspect one canonical CodeMap publish run, including run metadata plus claim-state and verification changes captured for that run. Defaults to the latest run when run_id is omitted.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        run_id: { type: "string", description: "Exact CodeMap publish run id. Omit to inspect the latest run." },
+        latest: { type: "boolean", description: "When true, prefer the latest publish run" },
+        claim_limit: { type: "number", description: "Maximum number of claim-state entries to return (default: 20, max: 100)" },
+        verification_limit: { type: "number", description: "Maximum number of verification entries to return (default: 20, max: 100)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading run history" },
+      },
+    },
+    handler: toolCodemapGetPublishRun,
+  },
+  {
+    name: "codemap_get_publish_status",
+    description:
+      "Get the current canonical CodeMap publish status, including latest run metadata, refresh scope, publish plan, incidents, compatibility parity, and history-storage policy.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading publish status" },
+      },
+    },
+    handler: toolCodemapGetPublishStatus,
+  },
+  {
+    name: "codemap_get_conflicts",
+    description:
+      "List canonical CodeMap conflicts across the claim graph, optionally filtered by claim or severity.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Directory (defaults to cwd)" },
+        claim_id: { type: "string", description: "Filter conflicts to a single claim id" },
+        severity: { type: "string", description: "Optional severity filter (low, medium, high)" },
+        limit: { type: "number", description: "Maximum number of conflicts to return (default: 20, max: 50)" },
+        source_path: { type: "string", description: "Optional source file or directory prefix scope" },
+        changed_files: {
+          type: "array",
+          description: "Optional changed source files used to scope conflicts through the CodeMap impact index",
+          items: { type: "string" },
+        },
+        impact_depth: { type: "number", description: "Optional impact traversal depth when changed_files is supplied (default: 1)" },
+        refresh: { type: "boolean", description: "Force a fresh scan and republish before reading conflicts" },
+      },
+    },
+    handler: toolCodemapGetConflicts,
+  },
+  {
     name: "codesight_get_wiki_index",
     description:
       "Get the wiki index (~200 tokens). Lists all available wiki articles with one-line summaries. Read this at session start for instant project orientation. If wiki not generated, run `npx codesight --wiki` first.",
@@ -618,6 +1239,7 @@ const TOOLS = [
       type: "object",
       properties: {
         directory: { type: "string", description: "Directory (defaults to cwd)" },
+        refresh: { type: "boolean", description: "Force a fresh note scan and republish before reading the knowledge map" },
       },
     },
     handler: toolGetKnowledge,

@@ -265,6 +265,20 @@ function extractPeople(content: string): string[] {
       if (PEOPLE_BLACKLIST.has(name)) continue;
       people.add(name);
     }
+
+    for (const m of content.matchAll(/^(?:attendees|participants|people):\s*([^\n]+)/gim)) {
+      const candidates = m[1]
+        .split(/,| and /i)
+        .map((candidate) => candidate.trim())
+        .filter(Boolean);
+      for (const candidate of candidates) {
+        const nameMatch = candidate.match(/\b([A-Z][a-z]+ [A-Z][a-z]+)\b/);
+        const name = nameMatch?.[1];
+        if (!name) continue;
+        if (PEOPLE_BLACKLIST.has(name)) continue;
+        people.add(name);
+      }
+    }
   }
 
   return [...people].slice(0, 10);

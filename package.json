@@ -10,7 +10,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
-    "test": "pnpm build && tsx --test tests/detectors.test.ts tests/wiki.test.ts tests/monorepo.test.ts",
+    "test": "tsc && tsx --test tests/codemap.test.ts tests/detectors.test.ts tests/wiki.test.ts tests/monorepo.test.ts tests/mcp.test.ts",
     "prepublishOnly": "pnpm build"
   },
   "keywords": [

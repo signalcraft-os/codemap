@@ -10,6 +10,10 @@ import type {
   WorkspaceInfo,
 } from "./types.js";
 
+function toPortablePath(path: string): string {
+  return path.replace(/\\/g, "/");
+}
+
 const IGNORE_DIRS = new Set([
   "node_modules",
   ".git",
@@ -871,7 +875,7 @@ async function detectWorkspace(
   if (wsPkg.name || wsPkg.dependencies || wsPkg.devDependencies) {
     return {
       name: wsPkg.name || dirName,
-      path: relative(repoRoot, wsPath),
+      path: toPortablePath(relative(repoRoot, wsPath)),
       frameworks: await detectFrameworks(wsPath, wsPkg),
       orms: await detectORMs(wsPath, wsPkg),
     };
@@ -1040,7 +1044,7 @@ async function detectNonJSWorkspace(
 
   return {
     name: dirName,
-    path: relative(repoRoot, wsPath),
+    path: toPortablePath(relative(repoRoot, wsPath)),
     frameworks,
     orms,
   };

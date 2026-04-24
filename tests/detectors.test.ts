@@ -1,14 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { writeFile, mkdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const FIXTURE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+import { writeFile, mkdir, mkdtemp } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 async function writeFixture(subdir: string, files: Record<string, string>) {
-  const dir = join(FIXTURE_ROOT, subdir);
-  await mkdir(dir, { recursive: true });
+  const safeSubdir = subdir.replace(/[^a-zA-Z0-9_-]/g, "-");
+  const dir = await mkdtemp(join(tmpdir(), `codesight-${safeSubdir}-`));
   for (const [name, content] of Object.entries(files)) {
     const filePath = join(dir, name);
     await mkdir(join(dir, ...name.split("/").slice(0, -1)), { recursive: true });
@@ -325,6 +323,7 @@ export const posts = pgTable("posts", {
     assert.ok(schemas.some((s: any) => s.name === "posts"));
     const usersSchema = schemas.find((s: any) => s.name === "users");
     assert.ok(usersSchema!.fields.some((f: any) => f.name === "email" && f.flags.includes("unique")));
+    assert.equal(usersSchema!.file, "src/schema.ts");
   });
 
   it("detects Prisma schema", async () => {
@@ -347,6 +346,7 @@ model Post {
     const files = await mods.collectFiles(dir);
     const schemas = await mods.detectSchemas(files, project);
     assert.ok(schemas.length >= 2);
+    assert.equal(schemas.find((s: any) => s.name === "User")?.file, "prisma/schema.prisma");
   });
 });
 

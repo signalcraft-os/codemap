@@ -1,14 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { writeFile, mkdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const FIXTURE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "fixtures");
+import { writeFile, mkdir, mkdtemp } from "node:fs/promises";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 
 async function writeFixture(subdir: string, files: Record<string, string>) {
-  const dir = join(FIXTURE_ROOT, subdir);
-  await mkdir(dir, { recursive: true });
+  const safeSubdir = subdir.replace(/[^a-zA-Z0-9_-]/g, "-");
+  const dir = await mkdtemp(join(tmpdir(), `codesight-${safeSubdir}-`));
   for (const [name, content] of Object.entries(files)) {
     const filePath = join(dir, name);
     await mkdir(join(dir, ...name.split("/").slice(0, -1)), { recursive: true });
@@ -261,6 +259,113 @@ describe("runMonorepoScan", () => {
     assert.ok(existsSync(join(dir, "packages/@test/pkg-a/.codesight/CODESIGHT.md")));
     // pkg-b was NOT included in the targeted refresh
     assert.ok(!existsSync(join(dir, "packages/@test/pkg-b/.codesight")));
+  });
+
+  it("uses the shared impact index to rebuild changed packages and reverse dependents", async () => {
+    const { runMonorepoScan } = await import("../dist/monorepo/orchestrator.js");
+    const { existsSync, readFileSync } = await import("node:fs");
+
+    const dir = await writeFixture("monorepo-impact-refresh", {
+      "pnpm-workspace.yaml": "packages:\n  - packages/**\n",
+      "packages/@test/pkg-a/package.json": JSON.stringify({ name: "@test/pkg-a" }),
+      "packages/@test/pkg-a/src/index.ts": "import { beta } from '@test/pkg-b'; export const alpha = beta;\n",
+      "packages/@test/pkg-a/src/b.ts": "export const b = 2;",
+      "packages/@test/pkg-a/src/c.ts": "export const c = 3;",
+      "packages/@test/pkg-a/src/d.ts": "export const d = 4;",
+      "packages/@test/pkg-a/src/e.ts": "export const e = 5;",
+      "packages/@test/pkg-a/src/f.ts": "export const f = 6;",
+      "packages/@test/pkg-a/src/g.ts": "export const g = 7;",
+      "packages/@test/pkg-a/src/h.ts": "export const h = 8;",
+      "packages/@test/pkg-a/src/i.ts": "export const i = 9;",
+      "packages/@test/pkg-a/src/j.ts": "export const j = 10;",
+      "packages/@test/pkg-a/src/k.ts": "export const k = 11;",
+      "packages/@test/pkg-b/package.json": JSON.stringify({ name: "@test/pkg-b" }),
+      "packages/@test/pkg-b/src/index.ts": "export const beta = 42;\n",
+      "packages/@test/pkg-b/src/b.ts": "export const b = 2;",
+      "packages/@test/pkg-b/src/c.ts": "export const c = 3;",
+      "packages/@test/pkg-b/src/d.ts": "export const d = 4;",
+      "packages/@test/pkg-b/src/e.ts": "export const e = 5;",
+      "packages/@test/pkg-b/src/f.ts": "export const f = 6;",
+      "packages/@test/pkg-b/src/g.ts": "export const g = 7;",
+      "packages/@test/pkg-b/src/h.ts": "export const h = 8;",
+      "packages/@test/pkg-b/src/i.ts": "export const i = 9;",
+      "packages/@test/pkg-b/src/j.ts": "export const j = 10;",
+      "packages/@test/pkg-b/src/k.ts": "export const k = 11;",
+      "packages/@test/pkg-c/package.json": JSON.stringify({ name: "@test/pkg-c" }),
+      "packages/@test/pkg-c/src/index.ts": "export const gamma = 1;\n",
+      "packages/@test/pkg-c/src/b.ts": "export const b = 2;",
+      "packages/@test/pkg-c/src/c.ts": "export const c = 3;",
+      "packages/@test/pkg-c/src/d.ts": "export const d = 4;",
+      "packages/@test/pkg-c/src/e.ts": "export const e = 5;",
+      "packages/@test/pkg-c/src/f.ts": "export const f = 6;",
+      "packages/@test/pkg-c/src/g.ts": "export const g = 7;",
+      "packages/@test/pkg-c/src/h.ts": "export const h = 8;",
+      "packages/@test/pkg-c/src/i.ts": "export const i = 9;",
+      "packages/@test/pkg-c/src/j.ts": "export const j = 10;",
+      "packages/@test/pkg-c/src/k.ts": "export const k = 11;",
+    });
+
+    const scanned = await runMonorepoScan(
+      dir,
+      { monorepo: { enabled: true, minFiles: 10 } },
+      undefined,
+      { changedFiles: ["packages/@test/pkg-b/src/index.ts"] },
+    );
+
+    const scannedNames = scanned.map((pkg: { name: string }) => pkg.name).sort();
+    const impactIndex = JSON.parse(readFileSync(join(dir, ".codemap", "cache", "impact-index.json"), "utf-8")) as {
+      workspaces: Array<{ name: string; dependsOn: string[]; }>;
+    };
+
+    assert.deepEqual(scannedNames, ["@test/pkg-a", "@test/pkg-b"]);
+    assert.ok(existsSync(join(dir, "packages/@test/pkg-a/.codesight/CODESIGHT.md")));
+    assert.ok(existsSync(join(dir, "packages/@test/pkg-b/.codesight/CODESIGHT.md")));
+    assert.ok(!existsSync(join(dir, "packages/@test/pkg-c/.codesight")));
+    assert.ok(impactIndex.workspaces.some((workspace) =>
+      workspace.name === "@test/pkg-a" && workspace.dependsOn.includes("@test/pkg-b"),
+    ));
+  });
+
+  it("can dual-write CodeMap output for scanned monorepo packages", async () => {
+    const { runMonorepoScan } = await import("../dist/monorepo/orchestrator.js");
+    const { existsSync } = await import("node:fs");
+
+    const dir = await writeFixture("monorepo-codemap", {
+      "pnpm-workspace.yaml": "packages:\n  - packages/**\n",
+      "packages/@test/pkg-ui/package.json": JSON.stringify({
+        name: "@test/pkg-ui",
+        dependencies: { express: "^4.0.0" },
+      }),
+      "packages/@test/pkg-ui/src/index.ts": [
+        'import { Router } from "express";',
+        "const router = Router();",
+        'router.get("/status", (_req, res) => res.json({ ok: true }));',
+        "export default router;",
+        "",
+      ].join("\n"),
+      "packages/@test/pkg-ui/src/b.ts": "export const b = 2;",
+      "packages/@test/pkg-ui/src/c.ts": "export const c = 3;",
+      "packages/@test/pkg-ui/src/d.ts": "export const d = 4;",
+      "packages/@test/pkg-ui/src/e.ts": "export const e = 5;",
+      "packages/@test/pkg-ui/src/f.ts": "export const f = 6;",
+      "packages/@test/pkg-ui/src/g.ts": "export const g = 7;",
+      "packages/@test/pkg-ui/src/h.ts": "export const h = 8;",
+      "packages/@test/pkg-ui/src/i.ts": "export const i = 9;",
+      "packages/@test/pkg-ui/src/j.ts": "export const j = 10;",
+      "packages/@test/pkg-ui/src/k.ts": "export const k = 11;",
+    });
+
+    await runMonorepoScan(
+      dir,
+      { monorepo: { enabled: true, minFiles: 10 } },
+      undefined,
+      { includeCodemap: true, trigger: "cli" },
+    );
+
+    assert.ok(existsSync(join(dir, "packages/@test/pkg-ui/.codesight/CODESIGHT.md")));
+    assert.ok(existsSync(join(dir, "packages/@test/pkg-ui/.codemap/views/index.md")));
+    assert.ok(existsSync(join(dir, "packages/@test/pkg-ui/.codemap/views/code/routes.md")));
+    assert.ok(existsSync(join(dir, ".codemap/cache/impact-index.json")));
   });
 
   it("warns and returns when targetPackage is not found", async () => {

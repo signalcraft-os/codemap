@@ -1,10 +1,8 @@
 import { watch } from "node:fs";
-import { join, relative } from "node:path";
-import { scan } from "../core.js";
-import { discoverPackages } from "./discover.js";
-import { extractCrossPackageDeps, writeDepsFile } from "./deps.js";
+import { extname } from "node:path";
+import { getWatchIgnoreDirs } from "../codemap/runtime/index.js";
 import type { CodesightConfig } from "../types.js";
-import type { PackageInfo } from "./discover.js";
+import { runMonorepoScan, type MonorepoScanOptions } from "./orchestrator.js";
 
 const WATCH_EXTENSIONS = new Set([
   ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
@@ -15,63 +13,82 @@ const WATCH_EXTENSIONS = new Set([
 
 const DEBOUNCE_MS = 500;
 
+function normalizeSourcePath(path: string): string {
+  return path.replace(/\\/g, "/").replace(/^\.\//, "");
+}
+
 /**
  * Start a single monorepo-root watcher that dispatches file-change events
- * to per-package rebuilds. Runs until SIGINT (Ctrl+C).
+ * to impact-aware package rebuilds. Runs until SIGINT (Ctrl+C).
  */
 export async function watchMonorepo(
   root: string,
-  userConfig: CodesightConfig
+  userConfig: CodesightConfig,
+  options: MonorepoScanOptions = {},
 ): Promise<void> {
-  const monorepoConfig = userConfig.monorepo ?? {};
   const outputDirName = userConfig.outputDir ?? ".codesight";
-  const maxDepth = userConfig.maxDepth ?? 10;
+  const ignoreDirs = new Set(getWatchIgnoreDirs(outputDirName));
 
-  // Discover packages upfront to build the dispatch map
-  let packages = await discoverPackages(root, monorepoConfig);
-  const allPackageNames = packages.map((p) => p.name);
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let changedFiles: string[] = [];
+  let isScanning = false;
 
-  // Build sorted list of package dirs for prefix matching (longest first)
-  const sortedDirs = packages.map((p) => p.dir).sort((a, b) => b.length - a.length);
+  console.log("  codesight monorepo watch — watching packages (Ctrl+C to stop)\n");
 
-  const debounceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  const flushChanges = async () => {
+    if (isScanning) {
+      debounceTimer = setTimeout(() => {
+        void flushChanges();
+      }, DEBOUNCE_MS);
+      return;
+    }
 
-  console.log(`  codesight monorepo watch — watching ${packages.length} packages (Ctrl+C to stop)\n`);
+    isScanning = true;
+    const pendingFiles = [...new Set(changedFiles.map(normalizeSourcePath).filter(Boolean))].sort();
+    changedFiles = [];
 
-  const watcher = watch(root, { recursive: true }, (eventType, filename) => {
-    if (!filename) return;
+    try {
+      await runMonorepoScan(root, userConfig, undefined, {
+        ...options,
+        changedFiles: pendingFiles,
+        trigger: "watch",
+      });
+    } catch (err: any) {
+      console.error(`  watch ERROR: ${err.message}`);
+    }
 
-    const absPath = join(root, filename);
+    isScanning = false;
+    if (changedFiles.length > 0) {
+      debounceTimer = setTimeout(() => {
+        void flushChanges();
+      }, DEBOUNCE_MS);
+    }
+  };
 
-    // Skip output dirs, node_modules, hidden dirs
-    if (
-      filename.includes("node_modules") ||
-      filename.includes(`/${outputDirName}/`) ||
-      filename.startsWith(".") ||
-      filename.includes("/.")
-    ) return;
+  const watcher = watch(root, { recursive: true }, (_eventType, filename) => {
+    if (!filename) {
+      return;
+    }
 
-    // Skip non-code files
-    const lastDot = filename.lastIndexOf(".");
-    if (lastDot === -1) return;
-    const ext = filename.slice(lastDot);
-    if (!WATCH_EXTENSIONS.has(ext)) return;
+    const normalizedFilename = normalizeSourcePath(filename);
+    const parts = normalizedFilename.split("/");
+    if (parts.some((part) => ignoreDirs.has(part) || (part.startsWith(".") && part !== ".env"))) {
+      return;
+    }
 
-    // Find which package this file belongs to
-    const packageDir = sortedDirs.find((d) => absPath.startsWith(d + "/"));
-    if (!packageDir) return;
+    const extension = extname(normalizedFilename);
+    if (!WATCH_EXTENSIONS.has(extension)) {
+      return;
+    }
 
-    // Debounce per package
-    const existing = debounceTimers.get(packageDir);
-    if (existing) clearTimeout(existing);
+    changedFiles.push(normalizedFilename);
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
 
-    debounceTimers.set(
-      packageDir,
-      setTimeout(async () => {
-        debounceTimers.delete(packageDir);
-        await rebuildPackage(packageDir, packages, allPackageNames, root, outputDirName, maxDepth, userConfig);
-      }, DEBOUNCE_MS)
-    );
+    debounceTimer = setTimeout(() => {
+      void flushChanges();
+    }, DEBOUNCE_MS);
   });
 
   process.on("SIGINT", () => {
@@ -80,63 +97,5 @@ export async function watchMonorepo(
     process.exit(0);
   });
 
-  // Keep process alive
   await new Promise<void>(() => {});
-}
-
-async function rebuildPackage(
-  packageDir: string,
-  packages: PackageInfo[],
-  allPackageNames: string[],
-  root: string,
-  outputDirName: string,
-  maxDepth: number,
-  userConfig: CodesightConfig
-): Promise<void> {
-  const pkg = packages.find((p) => p.dir === packageDir);
-  if (!pkg) return;
-
-  process.stdout.write(`  [${pkg.name}] rebuilding...`);
-  try {
-    await scan(packageDir, outputDirName, maxDepth, userConfig, true /* quiet */);
-    const deps = await extractCrossPackageDeps(packageDir, allPackageNames);
-    await writeDepsFile(packageDir, deps, outputDirName);
-    console.log(` done`);
-  } catch (err: any) {
-    console.error(` ERROR: ${err.message}`);
-  }
-
-  // Refresh global index after each package rebuild
-  await refreshGlobalIndex(root, packages, outputDirName);
-}
-
-async function refreshGlobalIndex(
-  root: string,
-  packages: PackageInfo[],
-  outputDirName: string
-): Promise<void> {
-  const { writeFile, stat, mkdir } = await import("node:fs/promises");
-  const confirmed: string[] = [];
-  for (const pkg of packages) {
-    try {
-      await stat(join(pkg.dir, outputDirName));
-      confirmed.push(relative(root, pkg.dir));
-    } catch {}
-  }
-  confirmed.sort();
-  const lines = [
-    "# CodeSight — Monorepo Index",
-    "",
-    "This project uses per-package CodeSight context files. Before using grep/find",
-    "to explore a package, check if `.codesight/CODESIGHT.md` exists in that",
-    "package's directory — it will be faster and cheaper.",
-    "",
-    "## Packages with CodeSight context",
-    "",
-    ...confirmed,
-    "",
-  ];
-  const outDir = join(root, outputDirName);
-  await mkdir(outDir, { recursive: true });
-  await writeFile(join(outDir, "CODESIGHT.md"), lines.join("\n"), "utf-8");
 }

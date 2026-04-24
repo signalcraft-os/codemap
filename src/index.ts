@@ -2,7 +2,7 @@
 
 import { resolve, join } from "node:path";
 import { writeFile, stat, mkdir } from "node:fs/promises";
-import { collectFiles } from "./scanner.js";
+import { collectFiles, readCodesightIgnore } from "./scanner.js";
 import { writeKnowledgeOutput } from "./formatter.js";
 import { detectKnowledge } from "./detectors/knowledge.js";
 import { generateAIConfigs } from "./generators/ai-config.js";
@@ -10,6 +10,12 @@ import { generateHtmlReport } from "./generators/html-report.js";
 import { generateWiki } from "./generators/wiki.js";
 import type { ScanResult } from "./types.js";
 import type { CodesightConfig } from "./types.js";
+import {
+  buildGitHookScript,
+  getWatchIgnoreDirs,
+  summarizeChangedFiles,
+  summarizeCodemapRefreshPlan,
+} from "./codemap/runtime/index.js";
 import { loadConfig, mergeCliConfig } from "./config.js";
 import { scan, BRAND, VERSION } from "./core.js";
 
@@ -23,9 +29,10 @@ function printHelp() {
     -o, --output <dir>       Output directory (default: .codesight)
     -d, --depth <n>          Max directory depth (default: 10)
     --wiki                   Generate wiki knowledge base (.codesight/wiki/)
+    --codemap                Generate experimental CodeMap shadow output (.codemap/, code claims or canonical knowledge claims in knowledge mode)
     --init                   Generate AI config files (CLAUDE.md, .cursorrules, etc.)
-    --watch                  Re-scan on file changes
-    --hook                   Install git pre-commit hook
+    --watch                  Re-scan on file changes (use with --wiki/--codemap to refresh derived outputs)
+    --hook                   Install git pre-commit hook (dual-write with --codemap)
     --html                   Generate interactive HTML report
     --open                   Generate HTML report and open in browser
     --mcp                    Start as MCP server (for Claude Code, Cursor)
@@ -51,9 +58,10 @@ function printHelp() {
   Examples:
     npx ${BRAND}                         # Scan current directory
     npx ${BRAND} --wiki                  # Scan + generate wiki knowledge base
+    npx ${BRAND} --codemap               # Scan + generate CodeMap shadow output + compatibility wiki
     npx ${BRAND} --init                  # Scan + generate AI config files
     npx ${BRAND} --open                  # Scan + open visual report
-    npx ${BRAND} --watch                 # Watch mode, re-scan on changes
+    npx ${BRAND} --watch --codemap       # Watch mode with CodeMap refresh + scan-state
     npx ${BRAND} --mcp                   # Start MCP server
     npx ${BRAND} --hook                  # Install git pre-commit hook
     npx ${BRAND} --max-tokens 50000      # Fit output in 50K token budget
@@ -62,6 +70,7 @@ function printHelp() {
     npx ${BRAND} --eval                  # Run accuracy benchmarks
     npx ${BRAND} ./my-project            # Scan specific directory
     npx ${BRAND} --mode knowledge        # Map knowledge base (.md notes → KNOWLEDGE.md)
+    npx ${BRAND} --mode knowledge --codemap # Also write canonical knowledge claims into .codemap/
     npx ${BRAND} --mode knowledge ~/vault # Map Obsidian vault or any .md folder
     npx ${BRAND} --profile agents        # Generate AGENTS.md only (cross-platform agents)
 `);
@@ -76,7 +85,7 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
-async function installGitHook(root: string, outputDirName: string) {
+async function installGitHook(root: string, outputDirName: string, codemapMode = false) {
   const hooksDir = join(root, ".git", "hooks");
   const hookPath = join(hooksDir, "pre-commit");
 
@@ -93,28 +102,43 @@ async function installGitHook(root: string, outputDirName: string) {
     existingContent = await readFile(hookPath, "utf-8");
   } catch {}
 
-  const safeOutputDir = outputDirName.replace(/[^a-zA-Z0-9._-]/g, "");
-  const hookCommand = `\n# codesight: regenerate AI context\nnpx codesight --wiki -o ${safeOutputDir}\ngit add ${safeOutputDir}/\n`;
+  const hookBlock = buildGitHookScript({
+    outputDirName,
+    includeWiki: true,
+    includeCodemap: codemapMode,
+    defaultPolicy: "warn",
+  });
+  const hookBlockPattern = /\n?# codesight: begin[\s\S]*?# codesight: end\n?/m;
+  const existingHookBlock = existingContent.match(hookBlockPattern)?.[0] ?? "";
 
-  if (existingContent.includes("codesight")) {
+  if (existingHookBlock.trim() === hookBlock.trim()) {
     console.log("  Git hook already installed.");
     return;
   }
 
-  if (existingContent) {
-    await writeFile(hookPath, existingContent + hookCommand);
+  const strippedExisting = existingContent.replace(hookBlockPattern, "").trimEnd();
+  if (strippedExisting) {
+    const separator = strippedExisting.endsWith("\n") ? "" : "\n";
+    await writeFile(hookPath, `${strippedExisting}${separator}${hookBlock}`);
   } else {
-    await writeFile(hookPath, `#!/bin/sh\n${hookCommand}`);
+    await writeFile(hookPath, `#!/bin/sh\n${hookBlock}`);
   }
 
   // Make executable
   const { chmod } = await import("node:fs/promises");
   await chmod(hookPath, 0o755);
 
-  console.log(`  Git pre-commit hook installed at .git/hooks/pre-commit`);
+  console.log(`  Git pre-commit hook installed at .git/hooks/pre-commit${codemapMode ? " (wiki + CodeMap dual-write)" : ""}`);
 }
 
-async function watchMode(root: string, outputDirName: string, maxDepth: number, userConfig: CodesightConfig = {}, wikiMode = false) {
+async function watchMode(
+  root: string,
+  outputDirName: string,
+  maxDepth: number,
+  userConfig: CodesightConfig = {},
+  wikiMode = false,
+  codemapMode = false
+) {
   console.log(`  Watching for changes... (Ctrl+C to stop)\n`);
 
   const WATCH_EXTENSIONS = new Set([
@@ -125,12 +149,7 @@ async function watchMode(root: string, outputDirName: string, maxDepth: number, 
     ".prisma", ".graphql", ".gql",
   ]);
 
-  const IGNORE_DIRS = new Set([
-    "node_modules", ".git", ".next", ".nuxt", ".svelte-kit",
-    "__pycache__", ".venv", "venv", "dist", "build", "out",
-    ".output", "coverage", ".turbo", ".vercel", ".cache",
-    outputDirName,
-  ]);
+  const IGNORE_DIRS = new Set(getWatchIgnoreDirs(outputDirName));
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let isScanning = false;
@@ -140,9 +159,9 @@ async function watchMode(root: string, outputDirName: string, maxDepth: number, 
     if (isScanning) return;
     isScanning = true;
     const files = [...changedFiles];
-    changedFiles = [];
+      changedFiles = [];
     try {
-      const fileList = files.length <= 5 ? files.join(", ") : `${files.length} files`;
+      const fileList = summarizeChangedFiles(files);
       console.log(`\n  Changes detected (${fileList}), re-scanning...\n`);
       const watchResult = await scan(root, outputDirName, maxDepth, userConfig);
       if (wikiMode) {
@@ -150,6 +169,17 @@ async function watchMode(root: string, outputDirName: string, maxDepth: number, 
         const outputDir = join(root, outputDirName);
         const wikiResult = await generateWiki(watchResult, outputDir);
         console.log(` ${wikiResult.articles.length} articles updated`);
+      }
+      if (codemapMode) {
+        const { publishCodeCodemap } = await import("./codemap/publish/code-pipeline.js");
+        process.stdout.write("  Refreshing CodeMap...");
+        const codemapResult = await publishCodeCodemap(watchResult, {
+          changedFiles: files,
+          outputDirName,
+          trigger: "watch",
+        });
+        console.log(` ${codemapResult.claims} claims, ${codemapResult.incidents.length} incidents`);
+        console.log(`  Scope:    ${summarizeCodemapRefreshPlan(codemapResult.refreshPlan)}`);
       }
     } catch (err: any) {
       console.error("  Scan error:", err.message);
@@ -162,16 +192,17 @@ async function watchMode(root: string, outputDirName: string, maxDepth: number, 
 
   const watcher = watch(root, { recursive: true }, (_event, filename) => {
     if (!filename) return;
+    const normalizedFilename = filename.replace(/\\/g, "/");
 
     // Skip ignored directories
-    const parts = filename.split("/");
+    const parts = normalizedFilename.split("/");
     if (parts.some((p) => IGNORE_DIRS.has(p))) return;
 
     // Only trigger on relevant file extensions
-    const fileExt = ext(filename);
+    const fileExt = ext(normalizedFilename);
     if (!WATCH_EXTENSIONS.has(fileExt)) return;
 
-    changedFiles.push(filename);
+    changedFiles.push(normalizedFilename);
     if (debounceTimer) clearTimeout(debounceTimer);
     debounceTimer = setTimeout(runScan, 500);
   });
@@ -185,17 +216,32 @@ async function watchMode(root: string, outputDirName: string, maxDepth: number, 
   await new Promise(() => {});
 }
 
-async function runKnowledgeScan(root: string, outputDirName: string, maxDepth: number) {
+async function runKnowledgeScan(
+  root: string,
+  outputDirName: string,
+  maxDepth: number,
+  codemapMode = false,
+  userConfig: CodesightConfig = {},
+  options: {
+    changedFiles?: string[];
+    quiet?: boolean;
+    trigger?: "cli" | "watch" | "mcp" | "hook";
+  } = {},
+) {
   const outputDir = join(root, outputDirName);
-  const projectName = root.split("/").pop() || "Project";
+  const projectName = root.split(/[\\/]/).pop() || "Project";
 
-  console.log(`\n  ${BRAND} v${VERSION}`);
-  console.log(`  Knowledge scan: ${root}\n`);
+  if (!options.quiet) {
+    console.log(`\n  ${BRAND} v${VERSION}`);
+    console.log(`  Knowledge scan: ${root}\n`);
+  }
 
   const startTime = Date.now();
 
   process.stdout.write("  Collecting notes...");
-  const files = await collectFiles(root, maxDepth, []);
+  const ignoreFromFile = await readCodesightIgnore(root);
+  const allIgnore = [...(userConfig.ignorePatterns ?? []), ...ignoreFromFile];
+  const files = await collectFiles(root, maxDepth, allIgnore);
   const mdFiles = files.filter((f) => f.endsWith(".md") || f.endsWith(".mdx"));
   console.log(` ${mdFiles.length} markdown files`);
 
@@ -206,6 +252,32 @@ async function runKnowledgeScan(root: string, outputDirName: string, maxDepth: n
   process.stdout.write("  Writing output...");
   await writeKnowledgeOutput(map, outputDir, projectName, VERSION);
   console.log(` ${outputDirName}/KNOWLEDGE.md`);
+
+  if (codemapMode) {
+    const { publishKnowledgeCodemap } = await import("./codemap/publish/knowledge-pipeline.js");
+    process.stdout.write("  Generating CodeMap...");
+    const codemapResult = await publishKnowledgeCodemap(root, files, {
+      changedFiles: options.changedFiles,
+      outputDirName,
+      trigger: options.trigger ?? "cli",
+    });
+    console.log(` .codemap/ (${codemapResult.knowledgeClaims} knowledge claims, ${codemapResult.knowledgeSnapshots} note snapshots, ${codemapResult.knowledgeEvidence} evidence spans)`);
+    if (codemapResult.compatibilityViews.length > 0) {
+      console.log("  Compat:   .codemap/compatibility/KNOWLEDGE.md");
+      if (codemapResult.compatibilityParity.legacyKnowledgePresent) {
+        console.log(`  Parity:   ${codemapResult.compatibilityParity.article.status}`);
+      } else {
+        console.log("  Parity:   no legacy .codesight/KNOWLEDGE.md baseline found");
+      }
+      if (codemapResult.incidents.length > 0) {
+        console.log(`  Incidents:${` ${codemapResult.incidents.length} compatibility migration warning(s)`}`);
+      }
+    }
+    console.log(`  Scope:    ${summarizeCodemapRefreshPlan(codemapResult.refreshPlan)}`);
+    console.log(`  Publish:  .codemap/publish/publish-plan.json`);
+    console.log(`  Refresh:  .codemap/cache/refresh-plan.json`);
+    console.log(`  State:    .codemap/cache/scan-state.json`);
+  }
 
   const elapsed = Date.now() - startTime;
 
@@ -232,6 +304,66 @@ async function runKnowledgeScan(root: string, outputDirName: string, maxDepth: n
 `);
 }
 
+async function watchKnowledgeMode(
+  root: string,
+  outputDirName: string,
+  maxDepth: number,
+  userConfig: CodesightConfig = {},
+  codemapMode = false,
+) {
+  console.log("  Watching knowledge notes for changes... (Ctrl+C to stop)\n");
+
+  const WATCH_EXTENSIONS = new Set([".md", ".mdx"]);
+  const IGNORE_DIRS = new Set(getWatchIgnoreDirs(outputDirName));
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let isScanning = false;
+  let changedFiles: string[] = [];
+
+  const runRefresh = async () => {
+    if (isScanning) return;
+    isScanning = true;
+    const files = [...changedFiles];
+    changedFiles = [];
+    try {
+      const fileList = summarizeChangedFiles(files);
+      console.log(`\n  Knowledge changes detected (${fileList}), refreshing...\n`);
+      await runKnowledgeScan(root, outputDirName, maxDepth, codemapMode, userConfig, {
+        changedFiles: files,
+        quiet: true,
+        trigger: "watch",
+      });
+    } catch (err: any) {
+      console.error("  Knowledge refresh error:", err.message);
+    }
+    isScanning = false;
+  };
+
+  const { watch } = await import("node:fs");
+  const { extname: ext } = await import("node:path");
+
+  const watcher = watch(root, { recursive: true }, (_event, filename) => {
+    if (!filename) return;
+    const normalizedFilename = filename.replace(/\\/g, "/");
+    const parts = normalizedFilename.split("/");
+    if (parts.some((part) => IGNORE_DIRS.has(part))) return;
+
+    const fileExt = ext(normalizedFilename);
+    if (!WATCH_EXTENSIONS.has(fileExt)) return;
+
+    changedFiles.push(normalizedFilename);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(runRefresh, 500);
+  });
+
+  process.on("SIGINT", () => {
+    watcher.close();
+    console.log("\n  Knowledge watch mode stopped.");
+    process.exit(0);
+  });
+
+  await new Promise(() => {});
+}
+
 async function main() {
   const args = process.argv.slice(2);
 
@@ -251,6 +383,7 @@ async function main() {
   let maxDepth = 10;
   let jsonOutput = false;
   let doWiki = false;
+  let doCodemap = false;
   let doInit = false;
   let doWatch = false;
   let doHook = false;
@@ -267,6 +400,7 @@ async function main() {
   let mode = "code";
   let doRefresh = false;
   let refreshPackage = "";
+  let codemapTrigger: "cli" | "hook" = "cli";
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -278,6 +412,8 @@ async function main() {
       jsonOutput = true;
     } else if (arg === "--wiki") {
       doWiki = true;
+    } else if (arg === "--codemap") {
+      doCodemap = true;
     } else if (arg === "--init") {
       doInit = true;
     } else if (arg === "--watch") {
@@ -312,6 +448,8 @@ async function main() {
       if (args[i + 1] && !args[i + 1].startsWith("-")) {
         refreshPackage = args[++i];
       }
+    } else if (arg === "--hook-run") {
+      codemapTrigger = "hook";
     } else if (!arg.startsWith("-")) {
       targetDir = resolve(arg);
     }
@@ -363,13 +501,16 @@ async function main() {
 
   // Install git hook
   if (doHook) {
-    await installGitHook(root, outputDirName);
+    await installGitHook(root, outputDirName, doCodemap);
   }
 
   // --refresh: rebuild monorepo packages and exit
   if (doRefresh) {
     const { runMonorepoScan } = await import("./monorepo/orchestrator.js");
-    await runMonorepoScan(root, config, refreshPackage || undefined);
+    await runMonorepoScan(root, config, refreshPackage || undefined, {
+      includeCodemap: doCodemap,
+      trigger: codemapTrigger,
+    });
     return;
   }
 
@@ -377,11 +518,14 @@ async function main() {
   if (config.monorepo?.enabled) {
     if (doWatch) {
       const { watchMonorepo } = await import("./monorepo/watch.js");
-      await watchMonorepo(root, config);
+      await watchMonorepo(root, config, { includeCodemap: doCodemap });
       return;
     }
     const { runMonorepoScan } = await import("./monorepo/orchestrator.js");
-    const scannedPackages = await runMonorepoScan(root, config);
+    const scannedPackages = await runMonorepoScan(root, config, undefined, {
+      includeCodemap: doCodemap,
+      trigger: codemapTrigger,
+    });
     if (doInit) {
       const { generateMonorepoAIConfigs } = await import("./generators/ai-config.js");
       const generated = await generateMonorepoAIConfigs(root, scannedPackages, outputDirName);
@@ -394,7 +538,13 @@ async function main() {
 
   // Knowledge mode: scan .md files instead of code
   if (mode === "knowledge") {
-    await runKnowledgeScan(root, outputDirName, maxDepth);
+    if (doWatch) {
+      await watchKnowledgeMode(root, outputDirName, maxDepth, config, doCodemap);
+      return;
+    }
+    await runKnowledgeScan(root, outputDirName, maxDepth, doCodemap, config, {
+      trigger: codemapTrigger,
+    });
     return;
   }
 
@@ -462,6 +612,37 @@ async function main() {
     console.log("");
     console.log(`  Session tip: read ${outputDirName}/wiki/index.md at session start (~200 tokens)`);
     console.log(`  vs full scan: ~${result.tokenStats.outputTokens.toLocaleString()} tokens — load targeted articles instead`);
+    console.log("");
+  }
+
+  // Generate experimental CodeMap shadow output
+  if (doCodemap) {
+    const { publishCodeCodemap } = await import("./codemap/publish/code-pipeline.js");
+    process.stdout.write("  Generating CodeMap...");
+    const codemapResult = await publishCodeCodemap(result, {
+      outputDirName,
+      trigger: codemapTrigger,
+    });
+    console.log(` .codemap/ (${codemapResult.claims} code claims, ${codemapResult.snapshots} snapshots, ${codemapResult.views.length} views)`);
+    console.log(`  Views:    ${codemapResult.views.map((view) => view.path).join(", ")}`);
+    if (codemapResult.compatibilityViews.length > 0) {
+      console.log(`  Compat:   .codemap/compatibility/wiki/ (${codemapResult.compatibilityViews.length} articles)`);
+      const parity = codemapResult.compatibilityParity;
+      if (parity.legacyWikiPresent) {
+        console.log(
+          `  Parity:   ${parity.summary.matched} match, ${parity.summary.drifted} drift, ${parity.summary.missingCompatibility} missing`,
+        );
+      } else {
+        console.log("  Parity:   no legacy .codesight/wiki baseline found");
+      }
+      if (codemapResult.incidents.length > 0) {
+        console.log(`  Incidents:${` ${codemapResult.incidents.length} compatibility migration warning(s)`}`);
+      }
+    }
+    console.log(`  Scope:    ${summarizeCodemapRefreshPlan(codemapResult.refreshPlan)}`);
+    console.log(`  Publish:  .codemap/publish/publish-plan.json`);
+    console.log(`  Refresh:  .codemap/cache/refresh-plan.json`);
+    console.log(`  State:    .codemap/cache/scan-state.json`);
     console.log("");
   }
 
@@ -570,7 +751,7 @@ async function main() {
 
   // Watch mode (blocks)
   if (doWatch) {
-    await watchMode(root, outputDirName, maxDepth, config, doWiki);
+    await watchMode(root, outputDirName, maxDepth, config, doWiki, doCodemap);
   }
 }
 

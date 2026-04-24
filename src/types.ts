@@ -112,6 +112,7 @@ export interface RouteInfo {
 
 export interface SchemaModel {
   name: string;
+  file?: string;
   fields: SchemaField[];
   relations: string[];
   orm: ORM;

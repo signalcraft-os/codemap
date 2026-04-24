@@ -138,6 +138,7 @@ export async function detectOpenAPISpec(
     if (fields.length > 0 || schemaDef.type === "object") {
       schemas.push({
         name,
+        file: specFile,
         fields,
         relations: [],
         orm: "unknown",

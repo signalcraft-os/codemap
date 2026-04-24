@@ -18,6 +18,21 @@ const AUDIT_FIELDS = new Set([
   "deleted_at",
 ]);
 
+function normalizeSchemaPath(path: string): string {
+  return path.replace(/\\/g, "/");
+}
+
+function toSchemaFile(root: string, file: string): string {
+  return normalizeSchemaPath(relative(root, file));
+}
+
+function withSchemaFile(models: SchemaModel[], file: string): SchemaModel[] {
+  return models.map((model) => ({
+    ...model,
+    file: model.file ?? file,
+  }));
+}
+
 export async function detectSchemas(
   files: string[],
   project: ProjectInfo
@@ -98,11 +113,13 @@ async function detectDrizzleSchemas(
   project: ProjectInfo
 ): Promise<SchemaModel[]> {
   const schemaFiles = files.filter(
-    (f) =>
-      f.match(/schema\.(ts|js)$/) ||
-      f.match(/\/schema\/.*\.(ts|js)$/) ||
-      f.match(/\.schema\.(ts|js)$/) ||
-      f.match(/\/db\/.*\.(ts|js)$/)
+    (f) => {
+      const normalized = normalizeSchemaPath(f);
+      return normalized.match(/schema\.(ts|js)$/) ||
+        normalized.match(/\/schema\/.*\.(ts|js)$/) ||
+        normalized.match(/\.schema\.(ts|js)$/) ||
+        normalized.match(/\/db\/.*\.(ts|js)$/);
+    }
   );
 
   const models: SchemaModel[] = [];
@@ -110,13 +127,14 @@ async function detectDrizzleSchemas(
 
   for (const file of schemaFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(project.root, file);
     if (!content.includes("pgTable") && !content.includes("mysqlTable") && !content.includes("sqliteTable")) continue;
 
     // Try AST first — much more accurate for Drizzle field chains
     if (ts) {
-      const astModels = extractDrizzleSchemaAST(ts, file, content);
+      const astModels = extractDrizzleSchemaAST(ts, schemaFile, content);
       if (astModels.length > 0) {
-        models.push(...astModels);
+        models.push(...withSchemaFile(astModels, schemaFile));
         continue;
       }
     }
@@ -164,6 +182,7 @@ async function detectDrizzleSchemas(
       if (fields.length > 0) {
         models.push({
           name: tableName,
+          file: schemaFile,
           fields,
           relations,
           orm: "drizzle",
@@ -218,6 +237,7 @@ async function detectPrismaSchemas(
   for (const p of candidateSet) {
     const content = await readFileSafe(p);
     if (!content) continue;
+    const schemaFile = toSchemaFile(project.root, p);
 
     const modelPattern = /model\s+(\w+)\s*\{([\s\S]*?)\n\}/g;
     let match;
@@ -259,7 +279,7 @@ async function detectPrismaSchemas(
 
       if (fields.length > 0) {
         seenNames.add(name);
-        allModels.push({ name, fields, relations, orm: "prisma" });
+        allModels.push({ name, file: schemaFile, fields, relations, orm: "prisma" });
       }
     }
 
@@ -275,6 +295,7 @@ async function detectPrismaSchemas(
       seenNames.add(enumKey);
       allModels.push({
         name: enumKey,
+        file: schemaFile,
         fields: values.map((v) => ({ name: v, type: "enum", flags: [] })),
         relations: [],
         orm: "prisma",
@@ -291,20 +312,24 @@ async function detectTypeORMSchemas(
   project: ProjectInfo
 ): Promise<SchemaModel[]> {
   const entityFiles = files.filter(
-    (f) => f.match(/\.entity\.(ts|js)$/) || f.match(/entities\/.*\.(ts|js)$/)
+    (f) => {
+      const normalized = normalizeSchemaPath(f);
+      return normalized.match(/\.entity\.(ts|js)$/) || normalized.match(/entities\/.*\.(ts|js)$/);
+    }
   );
   const models: SchemaModel[] = [];
   const ts = loadTypeScript(project.root);
 
   for (const file of entityFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(project.root, file);
     if (!content.includes("@Entity") && !content.includes("@Column")) continue;
 
     // Try AST first — handles TypeORM decorators accurately
     if (ts) {
-      const astModels = extractTypeORMSchemaAST(ts, file, content);
+      const astModels = extractTypeORMSchemaAST(ts, schemaFile, content);
       if (astModels.length > 0) {
-        models.push(...astModels);
+        models.push(...withSchemaFile(astModels, schemaFile));
         continue;
       }
     }
@@ -345,7 +370,7 @@ async function detectTypeORMSchemas(
     }
 
     if (fields.length > 0) {
-      models.push({ name, fields, relations, orm: "typeorm" });
+      models.push({ name, file: schemaFile, fields, relations, orm: "typeorm" });
     }
   }
 
@@ -362,13 +387,13 @@ async function detectSQLAlchemySchemas(
 
   for (const file of pyFiles) {
     const content = await readFileSafe(file);
-    const rel = relative(project.root, file);
+    const rel = toSchemaFile(project.root, file);
 
     // SQLModel: class X(SQLModel, table=True) with typed annotations
     if (content.includes("SQLModel") && content.includes("table=True")) {
       const sqlmodelModels = await extractSQLModelAST(rel, content);
       if (sqlmodelModels && sqlmodelModels.length > 0) {
-        models.push(...sqlmodelModels);
+        models.push(...withSchemaFile(sqlmodelModels, rel));
         continue;
       }
     }
@@ -379,7 +404,7 @@ async function detectSQLAlchemySchemas(
     // Try Python AST first
     const astModels = await extractSQLAlchemyAST(rel, content);
     if (astModels && astModels.length > 0) {
-      models.push(...astModels);
+      models.push(...withSchemaFile(astModels, rel));
       continue;
     }
 
@@ -424,7 +449,7 @@ async function detectSQLAlchemySchemas(
       }
 
       if (fields.length > 0) {
-        models.push({ name, fields, relations, orm: "sqlalchemy" });
+        models.push({ name, file: rel, fields, relations, orm: "sqlalchemy" });
       }
     }
   }
@@ -444,9 +469,9 @@ async function detectGORMSchemas(
     const content = await readFileSafe(file);
     if (!content.includes("gorm") && !content.includes("Model") && !content.includes("`json:")) continue;
 
-    const rel = relative(_project.root, file);
+    const rel = toSchemaFile(_project.root, file);
     const structModels = extractGORMModelsStructured(rel, content);
-    models.push(...structModels);
+    models.push(...withSchemaFile(structModels, rel));
   }
 
   return models;
@@ -458,7 +483,10 @@ async function detectEntSchemas(
   _project: ProjectInfo
 ): Promise<SchemaModel[]> {
   const goFiles = files.filter(
-    (f) => f.endsWith(".go") && (f.includes("/ent/schema/") || f.includes("/schema/"))
+    (f) => {
+      const normalized = normalizeSchemaPath(f);
+      return normalized.endsWith(".go") && (normalized.includes("/ent/schema/") || normalized.includes("/schema/"));
+    }
   );
   const models: SchemaModel[] = [];
 
@@ -466,9 +494,9 @@ async function detectEntSchemas(
     const content = await readFileSafe(file);
     if (!content.includes("ent.Schema")) continue;
 
-    const rel = relative(_project.root, file);
+    const rel = toSchemaFile(_project.root, file);
     const structModels = extractEntSchemasStructured(rel, content);
-    models.push(...structModels);
+    models.push(...withSchemaFile(structModels, rel));
   }
 
   return models;
@@ -484,6 +512,7 @@ async function detectEctoSchemas(
 
   for (const file of exFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(_project.root, file);
     if (!content.includes("use Ecto.Schema") && !content.includes("Ecto.Schema")) continue;
 
     // schema "table_name" do ... end
@@ -535,7 +564,7 @@ async function detectEctoSchemas(
         // Use module name as model name if available
         const modMatch = content.match(/defmodule\s+([\w.]+)/);
         const modelName = modMatch ? modMatch[1].split(".").pop()! : tableName;
-        models.push({ name: modelName, fields, relations, orm: "ecto" });
+        models.push({ name: modelName, file: schemaFile, fields, relations, orm: "ecto" });
       }
     }
   }
@@ -550,6 +579,7 @@ async function detectActiveRecordSchemas(
   const schemaPath = join(project.root, "db/schema.rb");
   const content = await readFileSafe(schemaPath);
   if (!content) return [];
+  const schemaFile = toSchemaFile(project.root, schemaPath);
 
   const models: SchemaModel[] = [];
   // create_table "tablename", options... do |t| ... end
@@ -594,7 +624,7 @@ async function detectActiveRecordSchemas(
     }
 
     if (fields.length > 0) {
-      models.push({ name, fields, relations, orm: "activerecord" });
+      models.push({ name, file: schemaFile, fields, relations, orm: "activerecord" });
     }
   }
 
@@ -616,10 +646,10 @@ async function detectDjangoSchemas(
     const content = await readFileSafe(file);
     if (!content.includes("models.Model") && !content.includes("(Model)")) continue;
 
-    const rel = relative(project.root, file);
+    const rel = toSchemaFile(project.root, file);
     const astModels = await extractDjangoModelsAST(rel, content);
     if (astModels && astModels.length > 0) {
-      models.push(...astModels);
+      models.push(...withSchemaFile(astModels, rel));
       continue;
     }
 
@@ -666,7 +696,7 @@ async function detectDjangoSchemas(
       }
 
       if (fields.length > 0 || relations.length > 0) {
-        models.push({ name, fields, relations, orm: "django" });
+        models.push({ name, file: rel, fields, relations, orm: "django" });
       }
     }
   }
@@ -695,8 +725,8 @@ async function detectEloquentSchemas(
       content.includes("$this->hasOne") ||
       content.includes("$this->belongsToMany");
     if (!hasEloquentMarker) continue;
-    const rel = relative(project.root, file);
-    models.push(...extractEloquentModels(rel, content));
+    const rel = toSchemaFile(project.root, file);
+    models.push(...withSchemaFile(extractEloquentModels(rel, content), rel));
   }
 
   return models;
@@ -713,8 +743,8 @@ async function detectEntityFrameworkSchemas(
   for (const file of csFiles) {
     const content = await readFileSafe(file);
     if (!content.includes("DbContext") && !content.includes("DbSet<")) continue;
-    const rel = relative(project.root, file);
-    models.push(...extractEntityFrameworkModels(rel, content));
+    const rel = toSchemaFile(project.root, file);
+    models.push(...withSchemaFile(extractEntityFrameworkModels(rel, content), rel));
   }
 
   return models;
@@ -731,6 +761,7 @@ async function detectMongooseSchemas(
 
   for (const file of jstsFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(_project.root, file);
     if (!content.includes("mongoose") && !content.includes("Schema")) continue;
 
     // NestJS pattern: @Schema() + SchemaFactory.createForClass(XClass)
@@ -753,7 +784,7 @@ async function detectMongooseSchemas(
           if (AUDIT_FIELDS.has(name)) continue;
           fields.push({ name, type: pm[2].toLowerCase(), flags: [] });
         }
-        models.push({ name: modelName, fields, relations: [], orm: "mongoose" });
+        models.push({ name: modelName, file: schemaFile, fields, relations: [], orm: "mongoose" });
       }
       continue; // already handled this file
     }
@@ -824,7 +855,7 @@ async function detectMongooseSchemas(
         }
       }
 
-      models.push({ name: modelName, fields, relations, orm: "mongoose" });
+      models.push({ name: modelName, file: schemaFile, fields, relations, orm: "mongoose" });
     }
   }
 
@@ -868,6 +899,7 @@ async function detectSequelizeSchemas(
 
   for (const file of jstsFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(_project.root, file);
     if (!content.includes("sequelize") && !content.includes("Sequelize") && !content.includes("DataTypes")) continue;
 
     // Pattern 1: class X extends Model with X.init({ fields }, { sequelize })
@@ -877,7 +909,7 @@ async function detectSequelizeSchemas(
       const name = m[1];
       if (seenNames.has(name)) continue;
       seenNames.add(name);
-      models.push({ name, fields: parseSequelizeFields(m[2]), relations: [], orm: "sequelize" });
+      models.push({ name, file: schemaFile, fields: parseSequelizeFields(m[2]), relations: [], orm: "sequelize" });
     }
 
     // Pattern 2: sequelize.define('ModelName', { fields })
@@ -886,7 +918,7 @@ async function detectSequelizeSchemas(
       const name = m[1];
       if (seenNames.has(name)) continue;
       seenNames.add(name);
-      models.push({ name, fields: parseSequelizeFields(m[2]), relations: [], orm: "sequelize" });
+      models.push({ name, file: schemaFile, fields: parseSequelizeFields(m[2]), relations: [], orm: "sequelize" });
     }
   }
 
@@ -930,6 +962,7 @@ async function detectExposedSchemas(
 
   for (const file of ktFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(_project.root, file);
     if (!content) continue;
     if (!EXPOSED_TABLE_BASES.some((b) => content.includes(`: ${b}(`))) continue;
 
@@ -986,7 +1019,7 @@ async function detectExposedSchemas(
       }
 
       if (fields.length > 0) {
-        models.push({ name, fields, relations, orm: "exposed", confidence: "regex" });
+        models.push({ name, file: schemaFile, fields, relations, orm: "exposed", confidence: "regex" });
       }
     }
   }
@@ -1004,6 +1037,7 @@ async function detectRawSQLSchemas(
 
   for (const file of sqlFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(_project.root, file);
     if (!content) continue;
 
     // CREATE TABLE [IF NOT EXISTS] schema.table_name ( ... )
@@ -1061,7 +1095,7 @@ async function detectRawSQLSchemas(
       }
 
       if (fields.length > 0) {
-        models.push({ name: tableName, fields, relations, orm: "unknown", confidence: "ast" });
+        models.push({ name: tableName, file: schemaFile, fields, relations, orm: "unknown", confidence: "ast" });
       }
     }
   }
@@ -1081,8 +1115,8 @@ async function detectRoomSchemas(
   for (const file of ktFiles) {
     const content = await readFileSafe(file);
     if (!content || !content.includes("@Entity")) continue;
-    const rel = relative(project.root, file).replace(/\\/g, "/");
-    models.push(...extractRoomEntities(rel, content));
+    const rel = toSchemaFile(project.root, file);
+    models.push(...withSchemaFile(extractRoomEntities(rel, content), rel));
   }
 
   return models;
@@ -1104,6 +1138,7 @@ async function detectSceneGraphSchemas(
 
   for (const file of xmlFiles) {
     const content = await readFileSafe(file);
+    const schemaFile = toSchemaFile(project.root, file);
     if (!content || !isSceneGraphXml(content)) continue;
     const comp = extractSceneGraphComponent(content);
     if (!comp) continue;
@@ -1112,6 +1147,7 @@ async function detectSceneGraphSchemas(
     seen.add(comp.name);
     models.push({
       name: comp.name,
+      file: schemaFile,
       fields: comp.interfaceFields,
       relations: [],
       orm: "scenegraph",
