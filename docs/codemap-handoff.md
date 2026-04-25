@@ -1,11 +1,11 @@
 # CodeMap Handoff
 
-Date: 2026-04-23
+Date: 2026-04-25
 Branch: `bootstrap-from-codesight`
 
 ## Current State
 
-CodeMap is now a parallel, hardened successor path to Codesight under `.codemap/`, with legacy behavior still preserved.
+CodeMap is a parallel, hardened successor path to Codesight under `.codemap/`, with legacy behavior preserved.
 
 Implemented and green:
 - canonical snapshots, claims, evidence, verification, conflicts
@@ -17,47 +17,68 @@ Implemented and green:
 - history, archive, compaction, and audit trails
 - historical snapshot content storage
 - snapshot archive indexing and tiering
+- per-snapshot archive sharding (metadata + content shards) with backward-compat bundle reads
+- claim-health incidents (stale critical claims, conflicts, conflicting/quarantined claims) flowing into `incidents.ndjson` alongside parity drift
+- traceable incidents (`source` + `sourceRecordId` fields point back to the verification record or conflict edge that produced each one)
+- severity-aware git-hook gating: `block` blocks only on `high`-severity incidents; `warn` warns on `high` + `medium`; `shadow` reports per-severity counts without exiting non-zero
+- `codemap_record_decision` MCP tool: AI sessions persist in-conversation decisions to `notes/decisions/recorded/<timestamp>-<slug>.md`; resulting `knowledge_decision` claims are tagged `recorded` with lower default confidence (0.5 / 0.6) so a human can review and promote
+- `[recorded]` marker in `.codemap/views/knowledge/overview.md` for AI-recorded decisions
 
-Latest verification:
+Latest verification (2026-04-25):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `112` passing, `0` failing
+- result: `117` passing, `0` failing
 
-## Important Recent Fix
+## Documentation
 
-Snapshot metadata files now use Windows-safe hashed basenames instead of raw `snapshot:<id>` filenames.
+- [docs/codemap-architecture.md](codemap-architecture.md) — design rationale (the *why*).
+- [docs/codemap-quickstart.md](codemap-quickstart.md) — adoption guide: install, hook policy modes, incident sources reference, AI adoption template (the *how*). **Read this if you are adopting CodeMap on a new project.**
+- This file — current state and what's next.
 
-This matters because Windows treated raw `:`-containing snapshot filenames as alternate data streams, which made snapshot archive planning miss hot snapshot files entirely.
+## Recent Cumulative Changes (2026-04-23 → 2026-04-25)
 
-Primary files involved:
-- [src/codemap/history/policy.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/history/policy.ts)
-- [src/codemap/store/snapshots-store.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/store/snapshots-store.ts)
-- [src/codemap/model/ids.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/model/ids.ts)
-- [tests/codemap.test.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/tests/codemap.test.ts)
+Grouped by phase, newest first.
 
-## Exact Next Step
+### Adoption-facing (2026-04-25)
+- New `docs/codemap-quickstart.md` — install + modes + incidents reference + AI adoption template
 
-Implement **per-snapshot archive sharding** for archived snapshot history.
+### Knowledge / decision capture (2026-04-25)
+- New `codemap_record_decision` MCP tool ([src/codemap/notes/record-decision.ts](../src/codemap/notes/record-decision.ts), wired in [src/mcp-server.ts](../src/mcp-server.ts))
+- Knowledge extractor lowers confidence and adds `recorded` + `ai-recorded` tags when a note carries the `ai-recorded` frontmatter tag ([src/codemap/extract/knowledge/notes.ts](../src/codemap/extract/knowledge/notes.ts))
+- Knowledge view renderer prepends `[recorded]` to summary lines for AI-recorded decisions ([src/codemap/render/views/knowledge.ts](../src/codemap/render/views/knowledge.ts))
 
-Reason:
-- current archive lookup is correct, but still loads the matching gzip bundle for a snapshot lookup
-- per-snapshot sharding would improve deep-history read speed and token efficiency
-- it is a smaller, cleaner next step than retention/deletion policy
+### Hook gating (2026-04-25, 2026-04-24)
+- Hook now reads both `incidents.ndjson` and `knowledge-incidents.ndjson` and sums severity counts before gating, so stale critical knowledge decisions block commits the same way stale routes do ([src/codemap/runtime/index.ts](../src/codemap/runtime/index.ts))
+- Latent stderr-noise bug fixed: previous `grep -c ... || echo 0` produced double output when grep found 0 matches; replaced with `[ -z "$VAR" ] && VAR=0` guard
+- `--codemap-policy <mode>` CLI flag: bakes `shadow` / `warn` / `block` as the env-var fallback default in the installed hook script. Env var still wins at commit time. ([src/index.ts](../src/index.ts))
+- Severity-aware hook script: `block` only on `high`, `warn` on `high` + `medium`, `shadow` always allows + reports per-severity counts
+- `shadow` policy mode wired into the hook script template
 
-Target outcome:
-- archived snapshots can be fetched by snapshot id without loading multi-snapshot bundles
-- archive index points directly to snapshot shard paths
-- `codemap_diff_since_snapshot` and snapshot store fallback use the shard path first
-- existing bundle-based archive fallback remains backward compatible
+### Incident signal (2026-04-24)
+- New claim-health incident generator ([src/codemap/publish/claim-health-incidents.ts](../src/codemap/publish/claim-health-incidents.ts))
+- `PublishIncident` extended with `source` and `sourceRecordId` for traceability ([src/codemap/model/types.ts](../src/codemap/model/types.ts))
+- Stable incident ids across runs (no longer hashed with `createdAt`)
+- Wired into both code and knowledge pipelines ([code-pipeline.ts](../src/codemap/publish/code-pipeline.ts), [knowledge-pipeline.ts](../src/codemap/publish/knowledge-pipeline.ts))
 
-## Likely Files To Touch
+### Snapshot archive sharding (2026-04-24)
+- Each archived snapshot now writes a metadata JSON shard + an optional content `.txt.gz` shard at `.codemap/archive/snapshots/files/` and `.codemap/archive/snapshots/content/`
+- Reads prefer shards; legacy bundle-based archives still work as a fallback ([src/codemap/history/policy.ts](../src/codemap/history/policy.ts), [src/codemap/store/snapshots-store.ts](../src/codemap/store/snapshots-store.ts))
 
-- [src/codemap/history/policy.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/history/policy.ts)
-- [src/codemap/store/snapshots-store.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/store/snapshots-store.ts)
-- [src/codemap/model/layout.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/model/layout.ts)
-- [src/codemap/model/types.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/model/types.ts)
-- [src/codemap/mcp/index.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/src/codemap/mcp/index.ts)
-- [tests/codemap.test.ts](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/tests/codemap.test.ts)
+### Snapshot store / Windows-safe basenames (2026-04-23)
+- Snapshot metadata files use hashed basenames instead of raw `snapshot:<id>` filenames; fixed Windows alternate-data-stream interpretation of `:`
+
+## Next-Step Candidates
+
+In rough priority order, with short rationale:
+
+1. **Conflict surfacing audit in MCP responses** — verify that `codemap_get_claim` / `codemap_search_claims` make conflict membership visible (not just status). Architecture invariant #6 says "conflicts must be visible." This is an *investigation*, not yet an implementation: the audit might find everything is fine (no work needed) or might surface a real gap. Do this in a clean session that re-reads `src/codemap/mcp/index.ts` from scratch.
+2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
+3. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+4. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+
+## Scheduled Follow-Ups
+
+A one-time remote agent is scheduled to fire on **2026-05-08 17:00 UTC** to re-audit watch/hook completeness against any accumulated shadow-mode usage data and re-check the Phase 6 punch list. Manage at https://claude.ai/code/routines/trig_01LoAKmHX5nqxa9BVkWdFpds
 
 ## Constraints To Preserve
 
@@ -65,13 +86,13 @@ Target outcome:
 - no big-bang rewrite
 - markdown remains a derived view, not the source of truth
 - maintain compatibility with repos that already have Codesight and repos that do not
-- keep archive fallback backward compatible with existing bundle-based snapshot archives
+- archive shard fallback stays backward compatible with existing bundle-based snapshot archives
 
 ## Resume Checklist
 
-1. Read [AGENTS.md](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/AGENTS.md) and [docs/codemap-architecture.md](C:/Users/MarketingLab/Documents/Codex/2026-04-21-read-agents-md-and-docs-codemap/docs/codemap-architecture.md).
+1. Read [AGENTS.md](../AGENTS.md), [docs/codemap-architecture.md](codemap-architecture.md), and [docs/codemap-quickstart.md](codemap-quickstart.md).
 2. Read this file.
-3. Implement per-snapshot archive sharding only.
+3. Pick a next-step candidate from the list above (or one driven by user need).
 4. Run:
    - `corepack pnpm build`
    - `corepack pnpm test`
