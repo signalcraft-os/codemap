@@ -6,12 +6,15 @@ import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 
 import {
+  AI_RECORDED_TAG,
+  buildClaimHealthIncidents,
   buildCodemapImpactIndex,
   buildGitHookScript,
   CODEMAP_DIRECTORIES,
   CODEMAP_FILES,
   collectImpactedSourcePaths,
   collectImpactedWorkspaces,
+  DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
   FileClaimStore,
   FileConflictStore,
   FileEvidenceStore,
@@ -26,18 +29,23 @@ import {
   createSourceSnapshot,
   getCodemapDirectory,
   getCodemapFile,
+  formatCodemapSearchClaims,
   getCodemapClaimHistory,
   getCodemapClaimStateHistory,
+  getCodemapConflicts,
   getCodemapDiffSinceSnapshot,
   getCodemapPublishRun,
   getCodemapPublishStatus,
   getCodemapVerifyClaim,
+  searchCodemapClaims,
   isCodemapId,
   makeCodemapId,
   makeHashedCodemapId,
   publishCodeCodemap,
   publishKnowledgeCodemap,
   publishRouteCodemap,
+  RECORDED_DECISIONS_DIR,
+  recordDecision,
   summarizeChangedFiles,
 } from "../dist/codemap/index.js";
 import { scan } from "../dist/core.js";
@@ -79,6 +87,8 @@ test("codemap layout points at the new .codemap namespace", () => {
   assert.equal(CODEMAP_DIRECTORIES.archive, ".codemap/archive");
   assert.equal(CODEMAP_DIRECTORIES.archiveSegments, ".codemap/archive/segments");
   assert.equal(CODEMAP_DIRECTORIES.archiveSnapshotSegments, ".codemap/archive/snapshots");
+  assert.equal(CODEMAP_DIRECTORIES.archiveSnapshotFiles, ".codemap/archive/snapshots/files");
+  assert.equal(CODEMAP_DIRECTORIES.archiveSnapshotContents, ".codemap/archive/snapshots/content");
   assert.equal(CODEMAP_DIRECTORIES.snapshotContents, ".codemap/snapshots/content");
   assert.equal(CODEMAP_DIRECTORIES.compatibilityWiki, ".codemap/compatibility/wiki");
   assert.equal(getCodemapFile("snapshotManifest"), ".codemap/snapshots/manifest.json");
@@ -157,9 +167,197 @@ test("CodeMap runtime helpers build dual-write hook scripts and ignore generated
   assert.match(hookScript, /--wiki --codemap --hook-run -o \.codesight/);
   assert.match(hookScript, /git add \.codesight\/ \.codemap\//);
   assert.match(hookScript, /CODESIGHT_CODEMAP_POLICY/);
+  assert.match(hookScript, /\.codemap\/publish\/incidents\.ndjson/);
+  assert.match(hookScript, /\.codemap\/publish\/knowledge-incidents\.ndjson/);
+  assert.match(hookScript, /for CODEMAP_FILE in/);
+  assert.match(hookScript, /grep -c '"severity":"high"' "\$CODEMAP_FILE"/);
+  assert.match(hookScript, /grep -c '"severity":"medium"' "\$CODEMAP_FILE"/);
+  assert.match(hookScript, /grep -c '"severity":"low"' "\$CODEMAP_FILE"/);
+  assert.match(hookScript, /CODEMAP_HIGH=\$\(\(CODEMAP_HIGH \+ CODEMAP_FILE_HIGH\)\)/);
+  assert.match(hookScript, /CODEMAP_MEDIUM=\$\(\(CODEMAP_MEDIUM \+ CODEMAP_FILE_MEDIUM\)\)/);
+  assert.match(hookScript, /CODEMAP_LOW=\$\(\(CODEMAP_LOW \+ CODEMAP_FILE_LOW\)\)/);
+  assert.match(hookScript, /\[ "\$CODEMAP_POLICY" = "block" \] && \[ "\$CODEMAP_HIGH" -gt 0 \]/);
+  assert.match(hookScript, /\[ "\$CODEMAP_POLICY" = "warn" \] && \[ "\$CODEMAP_HIGH" -gt 0 \]/);
+  assert.match(hookScript, /\[ "\$CODEMAP_POLICY" = "warn" \] && \[ "\$CODEMAP_MEDIUM" -gt 0 \]/);
+  assert.match(hookScript, /high-severity CodeMap incident/);
+  assert.match(hookScript, /medium-severity CodeMap incident/);
+  assert.match(hookScript, /shadow mode observed CodeMap incidents \(high=\$CODEMAP_HIGH medium=\$CODEMAP_MEDIUM low=\$CODEMAP_LOW\)/);
+  assert.doesNotMatch(hookScript, /\|\| echo 0/);
   assert.ok(getWatchIgnoreDirs(".codesight").includes(".codemap"));
   assert.equal(summarizeChangedFiles(["src/a.ts", "src/b.ts"]), "src/a.ts, src/b.ts");
   assert.equal(summarizeChangedFiles(["a.ts", "b.ts", "c.ts", "d.ts", "e.ts", "f.ts"]), "6 files");
+});
+
+test("buildGitHookScript bakes the requested defaultPolicy into the env-var fallback", () => {
+  const shadowScript = buildGitHookScript({
+    outputDirName: ".codesight",
+    includeCodemap: true,
+    defaultPolicy: "shadow",
+  });
+  const warnScript = buildGitHookScript({
+    outputDirName: ".codesight",
+    includeCodemap: true,
+    defaultPolicy: "warn",
+  });
+  const blockScript = buildGitHookScript({
+    outputDirName: ".codesight",
+    includeCodemap: true,
+    defaultPolicy: "block",
+  });
+
+  assert.match(shadowScript, /CODEMAP_POLICY="\$\{CODESIGHT_CODEMAP_POLICY:-shadow\}"/);
+  assert.match(warnScript, /CODEMAP_POLICY="\$\{CODESIGHT_CODEMAP_POLICY:-warn\}"/);
+  assert.match(blockScript, /CODEMAP_POLICY="\$\{CODESIGHT_CODEMAP_POLICY:-block\}"/);
+
+  assert.doesNotMatch(shadowScript, /CODESIGHT_CODEMAP_POLICY:-warn/);
+  assert.doesNotMatch(blockScript, /CODESIGHT_CODEMAP_POLICY:-warn/);
+});
+
+test("buildClaimHealthIncidents transcribes verifier judgments with stable ids and traceability", () => {
+  const claims = [
+    {
+      id: "claim:route-users",
+      type: "route" as const,
+      subject: "GET /users",
+      text: "GET /users handler",
+      sourceSnapshotIds: ["snapshot:abc"],
+      evidenceSpanIds: ["evidence:abc"],
+      status: "stale" as const,
+      supportScore: 0.5,
+      publicationConfidence: 0.5,
+      firstSeenAt: "2026-04-23T00:00:00.000Z",
+      tags: [],
+    },
+    {
+      id: "claim:component-card",
+      type: "component" as const,
+      subject: "Card",
+      text: "Card component",
+      sourceSnapshotIds: ["snapshot:def"],
+      evidenceSpanIds: ["evidence:def"],
+      status: "stale" as const,
+      supportScore: 0.5,
+      publicationConfidence: 0.5,
+      firstSeenAt: "2026-04-23T00:00:00.000Z",
+      tags: [],
+    },
+    {
+      id: "claim:relation-orphan",
+      type: "relation" as const,
+      subject: "posts.userId",
+      text: "posts.userId references users.id",
+      sourceSnapshotIds: ["snapshot:ghi"],
+      evidenceSpanIds: ["evidence:ghi"],
+      status: "quarantined" as const,
+      supportScore: 0.0,
+      publicationConfidence: 0.0,
+      firstSeenAt: "2026-04-23T00:00:00.000Z",
+      tags: [],
+    },
+    {
+      id: "claim:route-orders",
+      type: "route" as const,
+      subject: "GET /orders",
+      text: "GET /orders handler",
+      sourceSnapshotIds: ["snapshot:jkl"],
+      evidenceSpanIds: ["evidence:jkl"],
+      status: "verified" as const,
+      supportScore: 1.0,
+      publicationConfidence: 1.0,
+      firstSeenAt: "2026-04-23T00:00:00.000Z",
+      tags: [],
+    },
+  ];
+  const conflicts = [
+    {
+      id: "conflict:routes-collide",
+      claimA: "claim:route-users",
+      claimB: "claim:route-orders",
+      relation: "conflicts" as const,
+      severity: "high" as const,
+      createdAt: "2026-04-23T00:00:00.000Z",
+      rationale: "two handlers register GET /users",
+    },
+  ];
+  const verification = [
+    {
+      id: "verification:route-users-fail",
+      claimId: "claim:route-users",
+      verifier: "hash-match" as const,
+      outcome: "fail" as const,
+      reason: "snapshot hash drifted",
+      createdAt: "2026-04-23T00:00:00.000Z",
+      snapshotIdsChecked: ["snapshot:abc"],
+    },
+    {
+      id: "verification:component-card-fail",
+      claimId: "claim:component-card",
+      verifier: "component-consistency" as const,
+      outcome: "fail" as const,
+      reason: "component file removed",
+      createdAt: "2026-04-23T00:00:00.000Z",
+      snapshotIdsChecked: ["snapshot:def"],
+    },
+    {
+      id: "verification:relation-orphan-fail",
+      claimId: "claim:relation-orphan",
+      verifier: "schema-consistency" as const,
+      outcome: "fail" as const,
+      reason: "target model missing",
+      createdAt: "2026-04-23T00:00:00.000Z",
+      snapshotIdsChecked: ["snapshot:ghi"],
+    },
+  ];
+  const generatedAt = "2026-04-23T00:00:00.000Z";
+
+  const incidents = buildClaimHealthIncidents({
+    claims,
+    conflicts,
+    verification,
+    generatedAt,
+    criticalClaimTypes: DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
+  });
+
+  const bySource = new Map(incidents.map((incident) => [incident.source, incident]));
+
+  const conflictIncident = bySource.get("conflict-high");
+  assert.ok(conflictIncident);
+  assert.equal(conflictIncident?.severity, "high");
+  assert.deepEqual(conflictIncident?.claimIds, ["claim:route-orders", "claim:route-users"]);
+  assert.equal(conflictIncident?.sourceRecordId, "conflict:routes-collide");
+
+  const criticalStale = incidents.find((incident) =>
+    incident.source === "claim-stale-critical" && incident.claimIds[0] === "claim:route-users");
+  assert.ok(criticalStale);
+  assert.equal(criticalStale?.severity, "high");
+  assert.equal(criticalStale?.sourceRecordId, "verification:route-users-fail");
+
+  const nonCriticalStale = incidents.find((incident) =>
+    incident.source === "claim-stale" && incident.claimIds[0] === "claim:component-card");
+  assert.ok(nonCriticalStale);
+  assert.equal(nonCriticalStale?.severity, "medium");
+  assert.equal(nonCriticalStale?.sourceRecordId, "verification:component-card-fail");
+
+  const quarantinedIncident = incidents.find((incident) =>
+    incident.source === "claim-quarantined" && incident.claimIds[0] === "claim:relation-orphan");
+  assert.ok(quarantinedIncident);
+  assert.equal(quarantinedIncident?.severity, "medium");
+  assert.equal(quarantinedIncident?.sourceRecordId, "verification:relation-orphan-fail");
+
+  assert.equal(incidents.filter((incident) => incident.claimIds.includes("claim:route-orders")
+    && incident.source.startsWith("claim-")).length, 0);
+
+  const second = buildClaimHealthIncidents({
+    claims,
+    conflicts,
+    verification,
+    generatedAt: "2099-01-01T00:00:00.000Z",
+    criticalClaimTypes: DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
+  });
+  assert.deepEqual(
+    incidents.map((incident) => incident.id).sort(),
+    second.map((incident) => incident.id).sort(),
+  );
 });
 
 test("CodeMap refresh planning narrows impacted claims for targeted watch refreshes", async () => {
@@ -1132,9 +1330,13 @@ test("publishKnowledgeCodemap marks missing note-backed claims as stale and keep
     const publishRuns = parseNdjson<{ id: string }>(
       await readFile(join(repoRoot, ".codemap", "history", "publish-runs.ndjson"), "utf-8"),
     );
-    const knowledgeIncidents = parseNdjson<{ message: string }>(
-      await readFile(join(repoRoot, ".codemap", "publish", "knowledge-incidents.ndjson"), "utf-8"),
-    );
+    const knowledgeIncidents = parseNdjson<{
+      severity: string;
+      message: string;
+      claimIds: string[];
+      source: string;
+      sourceRecordId?: string;
+    }>(await readFile(join(repoRoot, ".codemap", "publish", "knowledge-incidents.ndjson"), "utf-8"));
     const claimStateHistory = await getCodemapClaimStateHistory(repoRoot, {
       subject: "We decided to use Polar for the initial marketplace launch.",
     });
@@ -1158,7 +1360,11 @@ test("publishKnowledgeCodemap marks missing note-backed claims as stale and keep
     assert.match(compatibilityKnowledge, /## Stale Claims/);
     assert.match(compatibilityKnowledge, /Polar/);
     assert.equal(publishRuns.length, 2);
-    assert.equal(knowledgeIncidents.length, 0);
+    const polarStaleIncident = knowledgeIncidents.find((incident) =>
+      incident.source === "claim-stale-critical" && incident.message.includes("Polar"));
+    assert.ok(polarStaleIncident);
+    assert.equal(polarStaleIncident?.severity, "high");
+    assert.ok(polarStaleIncident?.sourceRecordId?.startsWith("verification:"));
     assert.ok(claimStateHistory);
     assert.ok(claimStateHistory!.history.length >= 2);
     assert.ok(claimStateHistory!.history.some((entry) => entry.status === "verified"));
@@ -1379,6 +1585,99 @@ test("file-backed CodeMap stores persist deterministic canonical data under .cod
     assert.equal(manifest.entries[0].snapshotId, snapshot.id);
     assert.equal(claimIndex.claims[0].claimId, claim.id);
     assert.ok(claimIndex.claims[0].tags.includes("route"));
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("searchCodemapClaims surfaces conflict membership for verified claims with low-severity conflicts", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-search-conflicts-"));
+  try {
+    const sourceDir = join(repoRoot, "src");
+    await mkdir(sourceDir, { recursive: true });
+    await writeFile(join(sourceDir, "routes.ts"), "export const routes = [];\n", "utf-8");
+
+    const snapshot = await createSourceSnapshot({
+      repoRoot,
+      absolutePath: join(sourceDir, "routes.ts"),
+      sourceKind: "code",
+      createdAt: "2026-04-25T12:00:00.000Z",
+      language: "typescript",
+    });
+
+    const evidenceA = {
+      id: makeCodemapId("evidence", "route-users-conflicted"),
+      snapshotId: snapshot.id,
+      sourcePath: snapshot.sourcePath,
+      startLine: 1,
+      endLine: 1,
+      excerptHash: "excerpt-hash-a",
+      detectorMethod: "ast" as const,
+      confidence: 0.98,
+      labels: ["code"],
+    };
+
+    const conflictedClaim = {
+      id: makeCodemapId("claim", "route-users-conflicted"),
+      type: "route" as const,
+      subject: "GET /users",
+      text: "GET /users is handled in src/routes.ts.",
+      sourceSnapshotIds: [snapshot.id],
+      evidenceSpanIds: [evidenceA.id],
+      status: "verified" as const,
+      supportScore: 0.98,
+      publicationConfidence: 0.9,
+      firstSeenAt: "2026-04-25T12:00:00.000Z",
+      lastVerifiedAt: "2026-04-25T12:05:00.000Z",
+      tags: ["api", "route"],
+    };
+
+    const cleanClaim = {
+      id: makeCodemapId("claim", "route-orders-clean"),
+      type: "route" as const,
+      subject: "GET /orders",
+      text: "GET /orders is handled in src/routes.ts.",
+      sourceSnapshotIds: [snapshot.id],
+      evidenceSpanIds: [evidenceA.id],
+      status: "verified" as const,
+      supportScore: 0.98,
+      publicationConfidence: 0.9,
+      firstSeenAt: "2026-04-25T12:00:00.000Z",
+      lastVerifiedAt: "2026-04-25T12:05:00.000Z",
+      tags: ["api", "route"],
+    };
+
+    const conflict = {
+      id: makeCodemapId("conflict", "route-users-duplicates"),
+      claimA: conflictedClaim.id,
+      claimB: makeCodemapId("claim", "route-users-legacy"),
+      relation: "duplicates" as const,
+      severity: "low" as const,
+      createdAt: "2026-04-25T12:06:00.000Z",
+      rationale: "legacy route aliases the same endpoint",
+    };
+
+    await new FileSnapshotStore(repoRoot).put(snapshot);
+    await new FileEvidenceStore(repoRoot).put(evidenceA);
+    const claimStore = new FileClaimStore(repoRoot);
+    await claimStore.put(conflictedClaim);
+    await claimStore.put(cleanClaim);
+    await new FileConflictStore(repoRoot).put(conflict);
+
+    const result = await searchCodemapClaims(repoRoot, { type: "route", limit: 10 });
+    assert.equal(result.totalMatches, 2);
+
+    const conflicted = result.claims.find((claim) => claim.claimId === conflictedClaim.id);
+    const clean = result.claims.find((claim) => claim.claimId === cleanClaim.id);
+    assert.ok(conflicted, "conflicted claim should be in search results");
+    assert.ok(clean, "non-conflicted claim should be in search results");
+    assert.equal(conflicted!.status, "verified", "conflicted claim status is unchanged");
+    assert.equal(conflicted!.conflictCount, 1, "conflict membership exposed on verified claim");
+    assert.equal(clean!.conflictCount, 0, "claims without conflicts report zero");
+
+    const formatted = formatCodemapSearchClaims(result);
+    assert.match(formatted, /conflicts: 1/);
+    assert.ok(!/GET \/orders.*conflicts:/.test(formatted), "non-conflicted row should not advertise a conflict count");
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
@@ -2460,6 +2759,19 @@ test("publishCodeCodemap invalidates previously published schema claims when sou
     assert.match(databaseView, /users/);
     assert.match(compatibilityDatabase, /## Stale Claims/);
     assert.match(compatibilityDatabase, /`users` \[stale\]/);
+
+    const incidents = parseNdjson<{
+      severity: string;
+      message: string;
+      claimIds: string[];
+      source: string;
+      sourceRecordId?: string;
+    }>(await readFile(join(repoRoot, ".codemap", "publish", "incidents.ndjson"), "utf-8"));
+    const staleIncident = incidents.find((incident) =>
+      incident.source === "claim-stale-critical" && incident.message.includes("users"));
+    assert.ok(staleIncident);
+    assert.equal(staleIncident?.severity, "high");
+    assert.ok(staleIncident?.sourceRecordId?.startsWith("verification:"));
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
@@ -2555,6 +2867,20 @@ test("publishCodeCodemap renders schema conflicts for contradictory duplicate mo
     assert.match(databaseView, /disagree on schema details/);
     assert.match(compatibilityDatabase, /## Conflicts/);
     assert.match(compatibilityDatabase, /disagree on schema details/);
+
+    const incidents = parseNdjson<{
+      severity: string;
+      message: string;
+      claimIds: string[];
+      source: string;
+      sourceRecordId?: string;
+    }>(await readFile(join(repoRoot, ".codemap", "publish", "incidents.ndjson"), "utf-8"));
+    const conflictIncident = incidents.find((incident) => incident.source === "conflict-medium");
+    assert.ok(conflictIncident);
+    assert.equal(conflictIncident?.severity, "medium");
+    assert.equal(conflictIncident?.claimIds.length, 2);
+    assert.ok(conflictIncident?.sourceRecordId);
+    assert.match(conflictIncident!.message, /schema details/);
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
@@ -2806,12 +3132,24 @@ test("publishCodeCodemap compacts historical snapshots into archive bundles whil
     ) as {
       mode: string;
       totalArchiveBytes: number;
-      segments: Array<{ snapshotId: string; state: string; bundlePath?: string; compression: string; }>;
+      segments: Array<{
+        snapshotId: string;
+        state: string;
+        bundlePath?: string;
+        metadataPath?: string;
+        contentPath?: string;
+        compression: string;
+      }>;
     };
     const snapshotIndex = JSON.parse(
       await readFile(join(repoRoot, ".codemap", "archive", "snapshot-index.json"), "utf-8"),
     ) as {
-      snapshots: Array<{ snapshotId: string; bundlePath: string; }>;
+      snapshots: Array<{
+        snapshotId: string;
+        bundlePath?: string;
+        metadataPath?: string;
+        contentPath?: string;
+      }>;
     };
     const historyStorage = JSON.parse(
       await readFile(join(repoRoot, ".codemap", "history", "storage-status.json"), "utf-8"),
@@ -2829,13 +3167,26 @@ test("publishCodeCodemap compacts historical snapshots into archive bundles whil
     assert.ok(firstSnapshotId);
     assert.equal(snapshotManifest.mode, "compact");
     assert.ok(snapshotManifest.totalArchiveBytes > 0);
-    assert.ok(snapshotManifest.segments.some((segment) =>
-      segment.snapshotId === firstSnapshotId
-      && segment.state === "archived"
-      && segment.compression === "gzip"
-      && Boolean(segment.bundlePath),
-    ));
-    assert.ok(snapshotIndex.snapshots.some((entry) => entry.snapshotId === firstSnapshotId));
+    const targetSegment = snapshotManifest.segments.find((segment) =>
+      segment.snapshotId === firstSnapshotId && segment.state === "archived");
+    assert.ok(targetSegment);
+    assert.equal(targetSegment?.compression, "gzip");
+    assert.equal(targetSegment?.bundlePath, undefined);
+    assert.ok(targetSegment?.metadataPath?.startsWith(".codemap/archive/snapshots/files/"));
+    assert.ok(targetSegment?.metadataPath?.endsWith(".json"));
+    assert.ok(targetSegment?.contentPath?.startsWith(".codemap/archive/snapshots/content/"));
+    assert.ok(targetSegment?.contentPath?.endsWith(".txt.gz"));
+    const targetIndexEntry = snapshotIndex.snapshots.find((entry) => entry.snapshotId === firstSnapshotId);
+    assert.ok(targetIndexEntry);
+    assert.equal(targetIndexEntry?.bundlePath, undefined);
+    assert.equal(targetIndexEntry?.metadataPath, targetSegment?.metadataPath);
+    assert.equal(targetIndexEntry?.contentPath, targetSegment?.contentPath);
+    const metadataShard = JSON.parse(
+      await readFile(join(repoRoot, targetSegment!.metadataPath!), "utf-8"),
+    ) as { id: string };
+    assert.equal(metadataShard.id, firstSnapshotId);
+    const contentShardBytes = await readFile(join(repoRoot, targetSegment!.contentPath!));
+    assert.ok(gunzipSync(contentShardBytes).toString("utf-8").includes("/users"));
     assert.equal(historyStorage.snapshotStorage.historicalHotSnapshots, 0);
     assert.ok(historyStorage.snapshotStorage.archivedSnapshots >= 1);
     assert.equal(archivedSnapshot?.id, firstSnapshotId);
@@ -2844,6 +3195,96 @@ test("publishCodeCodemap compacts historical snapshots into archive bundles whil
     assert.equal(archivedDiff?.contentDiff?.kind, "changed");
     assert.ok(archivedDiff?.contentDiff?.stored?.excerpt.some((line) => line.includes("/users")));
     assert.ok(archivedDiff?.contentDiff?.current?.excerpt.some((line) => line.includes("/accounts")));
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("FileSnapshotStore reads legacy bundle-based snapshot archives without per-snapshot shards", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-snapshot-archive-legacy-"));
+  try {
+    const { gzipSync } = await import("node:zlib");
+    const { createHash } = await import("node:crypto");
+
+    const snapshotId = "snapshot:legacy-fixture";
+    const sourcePath = "src/legacy.ts";
+    const contentHash = "deadbeef";
+    const createdAt = "2026-04-23T00:00:00.000Z";
+    const segmentId = "snapshot:archive-legacy-segment";
+    const sourceText = 'export const value = "legacy archive content";\n';
+
+    const basename = createHash("sha256").update(snapshotId).digest("hex");
+    const bundlePath = `.codemap/archive/snapshots/${basename}.json.gz`;
+    const bundle = {
+      version: 1,
+      segmentId,
+      createdAt,
+      mode: "archive",
+      snapshot: {
+        id: snapshotId,
+        sourcePath,
+        sourceKind: "code",
+        contentHash,
+        createdAt,
+        sizeBytes: sourceText.length,
+      },
+      content: sourceText,
+    };
+    const compressedBundle = gzipSync(Buffer.from(JSON.stringify(bundle), "utf-8"));
+
+    await mkdir(join(repoRoot, ".codemap", "archive", "snapshots"), { recursive: true });
+    await mkdir(join(repoRoot, ".codemap", "archive"), { recursive: true });
+    await writeFile(join(repoRoot, bundlePath), compressedBundle);
+
+    await writeFile(
+      join(repoRoot, ".codemap", "archive", "snapshot-manifest.json"),
+      `${JSON.stringify({
+        version: 1,
+        generatedAt: createdAt,
+        mode: "archive",
+        segments: [{
+          id: segmentId,
+          snapshotId,
+          sourcePath,
+          createdAt,
+          contentHash,
+          sizeBytes: sourceText.length,
+          bytes: compressedBundle.byteLength,
+          state: "archived",
+          compression: "gzip",
+          bundlePath,
+        }],
+        totalArchiveBytes: compressedBundle.byteLength,
+        plannedBytes: 0,
+      }, null, 2)}\n`,
+      "utf-8",
+    );
+    await writeFile(
+      join(repoRoot, ".codemap", "archive", "snapshot-index.json"),
+      `${JSON.stringify({
+        version: 1,
+        generatedAt: createdAt,
+        snapshots: [{
+          snapshotId,
+          sourcePath,
+          createdAt,
+          contentHash,
+          sizeBytes: sourceText.length,
+          bytes: compressedBundle.byteLength,
+          segmentId,
+          bundlePath,
+        }],
+      }, null, 2)}\n`,
+      "utf-8",
+    );
+
+    const snapshotStore = new FileSnapshotStore(repoRoot);
+    const fetched = await snapshotStore.getById(snapshotId);
+    const fetchedContent = await snapshotStore.getContent(snapshotId);
+
+    assert.equal(fetched?.id, snapshotId);
+    assert.equal(fetched?.sourcePath, sourcePath);
+    assert.equal(fetchedContent, sourceText);
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
@@ -2900,6 +3341,297 @@ test("CodeMap publish status summarizes latest run, refresh scope, and storage s
     assert.ok(status.compatibility.code);
     assert.ok(status.historyStorage);
     assert.ok(status.historyStorage!.totalBytes >= status.historyStorage!.hotBytes);
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("getCodemapConflicts orders results by severity rank so truncated lists keep high-severity edges", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-conflicts-order-"));
+  try {
+    const sourceDir = join(repoRoot, "src");
+    await mkdir(sourceDir, { recursive: true });
+    await writeFile(join(sourceDir, "routes.ts"), "export const routes = [];\n", "utf-8");
+
+    const snapshot = await createSourceSnapshot({
+      repoRoot,
+      absolutePath: join(sourceDir, "routes.ts"),
+      sourceKind: "code",
+      createdAt: "2026-04-25T12:00:00.000Z",
+      language: "typescript",
+    });
+
+    const evidence = {
+      id: makeCodemapId("evidence", "route-shared"),
+      snapshotId: snapshot.id,
+      sourcePath: snapshot.sourcePath,
+      startLine: 1,
+      endLine: 1,
+      excerptHash: "excerpt-hash",
+      detectorMethod: "ast" as const,
+      confidence: 0.98,
+      labels: ["code"],
+    };
+
+    const claimA = {
+      id: makeCodemapId("claim", "route-a"),
+      type: "route" as const,
+      subject: "GET /a",
+      text: "GET /a is handled in src/routes.ts.",
+      sourceSnapshotIds: [snapshot.id],
+      evidenceSpanIds: [evidence.id],
+      status: "verified" as const,
+      supportScore: 0.98,
+      publicationConfidence: 0.9,
+      firstSeenAt: "2026-04-25T12:00:00.000Z",
+      tags: ["api", "route"],
+    };
+
+    const claimB = {
+      ...claimA,
+      id: makeCodemapId("claim", "route-b"),
+      subject: "GET /b",
+      text: "GET /b is handled in src/routes.ts.",
+    };
+
+    const claimC = {
+      ...claimA,
+      id: makeCodemapId("claim", "route-c"),
+      subject: "GET /c",
+      text: "GET /c is handled in src/routes.ts.",
+    };
+
+    // IDs intentionally sort alphabetically opposite of severity rank:
+    // "conflict:aaaa-low" < "conflict:mmmm-medium" < "conflict:zzzz-high"
+    const lowConflict = {
+      id: "conflict:aaaa-low",
+      claimA: claimA.id,
+      claimB: claimB.id,
+      relation: "duplicates" as const,
+      severity: "low" as const,
+      createdAt: "2026-04-25T12:01:00.000Z",
+      rationale: "low severity",
+    };
+    const mediumConflict = {
+      id: "conflict:mmmm-medium",
+      claimA: claimA.id,
+      claimB: claimC.id,
+      relation: "narrows" as const,
+      severity: "medium" as const,
+      createdAt: "2026-04-25T12:02:00.000Z",
+      rationale: "medium severity",
+    };
+    const highConflict = {
+      id: "conflict:zzzz-high",
+      claimA: claimB.id,
+      claimB: claimC.id,
+      relation: "conflicts" as const,
+      severity: "high" as const,
+      createdAt: "2026-04-25T12:03:00.000Z",
+      rationale: "high severity",
+    };
+
+    await new FileSnapshotStore(repoRoot).put(snapshot);
+    await new FileEvidenceStore(repoRoot).put(evidence);
+    const claimStore = new FileClaimStore(repoRoot);
+    await claimStore.put(claimA);
+    await claimStore.put(claimB);
+    await claimStore.put(claimC);
+    const conflictStore = new FileConflictStore(repoRoot);
+    await conflictStore.put(lowConflict);
+    await conflictStore.put(mediumConflict);
+    await conflictStore.put(highConflict);
+
+    const all = await getCodemapConflicts(repoRoot);
+    assert.equal(all.totalConflicts, 3);
+    assert.equal(all.conflicts[0].id, "conflict:zzzz-high", "high severity sorts first despite alphabetically-late id");
+    assert.equal(all.conflicts[1].id, "conflict:mmmm-medium");
+    assert.equal(all.conflicts[2].id, "conflict:aaaa-low");
+
+    // With limit=1, the AI must still see the high-severity edge — not the alphabetically-first low one.
+    const truncated = await getCodemapConflicts(repoRoot, { limit: 1 });
+    assert.equal(truncated.totalConflicts, 3);
+    assert.equal(truncated.conflicts.length, 1);
+    assert.equal(truncated.conflicts[0].id, "conflict:zzzz-high");
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("CodeMap publish status incident summary breaks counts down by source and severity", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-incident-bysource-"));
+  try {
+    const publishDir = join(repoRoot, ".codemap", "publish");
+    await mkdir(publishDir, { recursive: true });
+
+    const codeIncidents = [
+      {
+        id: "incident:conflict-routes",
+        createdAt: "2026-04-25T12:00:00.000Z",
+        severity: "high",
+        message: "two routes collide",
+        claimIds: ["claim:route-a", "claim:route-b"],
+        source: "conflict-high",
+        sourceRecordId: "conflict:routes-collide",
+      },
+      {
+        id: "incident:stale-route",
+        createdAt: "2026-04-25T12:01:00.000Z",
+        severity: "high",
+        message: "route source moved",
+        claimIds: ["claim:route-c"],
+        source: "claim-stale-critical",
+        sourceRecordId: "verification:route-c",
+      },
+      {
+        id: "incident:stale-component",
+        createdAt: "2026-04-25T12:02:00.000Z",
+        severity: "medium",
+        message: "component drifted",
+        claimIds: ["claim:component-x"],
+        source: "claim-stale",
+        sourceRecordId: "verification:component-x",
+      },
+    ];
+    const knowledgeIncidents = [
+      {
+        id: "incident:stale-decision",
+        createdAt: "2026-04-25T12:03:00.000Z",
+        severity: "high",
+        message: "decision lost evidence",
+        claimIds: ["claim:knowledge-decision-1"],
+        source: "claim-stale-critical",
+        sourceRecordId: "verification:knowledge-decision-1",
+      },
+    ];
+
+    await writeFile(
+      join(publishDir, "incidents.ndjson"),
+      `${codeIncidents.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+      "utf-8",
+    );
+    await writeFile(
+      join(publishDir, "knowledge-incidents.ndjson"),
+      `${knowledgeIncidents.map((entry) => JSON.stringify(entry)).join("\n")}\n`,
+      "utf-8",
+    );
+
+    const status = await getCodemapPublishStatus(repoRoot);
+
+    assert.equal(status.incidents.total, 4);
+    assert.equal(status.incidents.code, 3);
+    assert.equal(status.incidents.knowledge, 1);
+
+    const bySource = status.incidents.bySource;
+    assert.equal(bySource.length, 3);
+
+    const conflictHigh = bySource.find((entry) => entry.source === "conflict-high");
+    const staleCritical = bySource.find((entry) => entry.source === "claim-stale-critical");
+    const stale = bySource.find((entry) => entry.source === "claim-stale");
+    assert.deepEqual(conflictHigh, { source: "conflict-high", severity: "high", count: 1 });
+    assert.deepEqual(staleCritical, { source: "claim-stale-critical", severity: "high", count: 2 });
+    assert.deepEqual(stale, { source: "claim-stale", severity: "medium", count: 1 });
+
+    const highEntries = bySource.filter((entry) => entry.severity === "high");
+    const mediumEntries = bySource.filter((entry) => entry.severity === "medium");
+    const lastHighIndex = bySource.lastIndexOf(highEntries.at(-1)!);
+    const firstMediumIndex = bySource.indexOf(mediumEntries[0]);
+    assert.ok(lastHighIndex < firstMediumIndex, "high-severity entries sort before medium");
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("recordDecision writes a structured decision note in notes/decisions/recorded/ with ai-recorded tag", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-record-decision-unit-"));
+  try {
+    const result = await recordDecision({
+      repoRoot,
+      subject: "Switch payments from Stripe to Polar",
+      decision: "We are going with Polar instead of Stripe for the initial marketplace launch.",
+      rationale: "Polar lets us avoid the Stripe Connect onboarding overhead.",
+      relatedSourcePaths: ["src/payments/index.ts"],
+      supersedes: ["Use Stripe Connect for payouts"],
+      recordedAt: "2026-04-24T12:34:56.789Z",
+    });
+
+    assert.equal(result.recordedAt, "2026-04-24T12:34:56.789Z");
+    assert.ok(result.relativePath.startsWith(`${RECORDED_DECISIONS_DIR}/`));
+    assert.ok(result.filename.endsWith(".md"));
+    assert.equal(result.filename.includes(":"), false);
+    assert.ok(result.filename.includes("switch-payments-from-stripe-to-polar"));
+
+    const content = await readFile(result.absolutePath, "utf-8");
+    assert.match(content, /recorded_at: 2026-04-24T12:34:56.789Z/);
+    assert.match(content, /recorded_by: ai-session/);
+    assert.match(content, new RegExp(`tags: \\[${AI_RECORDED_TAG}\\]`));
+    assert.match(content, /## Decision/);
+    assert.match(content, /Polar instead of Stripe/);
+    assert.match(content, /## Rationale/);
+    assert.match(content, /## Related Source Paths/);
+    assert.match(content, /- src\/payments\/index\.ts/);
+    assert.match(content, /## Supersedes/);
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("recordDecision rejects empty subject or decision", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-record-decision-validate-"));
+  try {
+    await assert.rejects(
+      recordDecision({ repoRoot, subject: "  ", decision: "x" }),
+      /subject must not be empty/,
+    );
+    await assert.rejects(
+      recordDecision({ repoRoot, subject: "x", decision: "" }),
+      /decision must not be empty/,
+    );
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("publishKnowledgeCodemap surfaces AI-recorded decisions with the recorded tag, lower confidence, and visible marker", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-record-decision-e2e-"));
+  try {
+    await writeFile(join(repoRoot, "package.json"), JSON.stringify({
+      name: "codemap-record-decision-e2e",
+    }, null, 2), "utf-8");
+
+    const recorded = await recordDecision({
+      repoRoot,
+      subject: "Adopt Polar for marketplace payouts",
+      decision: "Decided to use Polar for marketplace payouts.",
+      rationale: "Avoids Stripe Connect onboarding overhead in MVP.",
+      relatedSourcePaths: ["src/payments/index.ts"],
+      recordedAt: "2026-04-24T12:34:56.789Z",
+    });
+
+    await publishKnowledgeCodemap(repoRoot, [recorded.absolutePath]);
+
+    const claims = parseNdjson<{
+      type: string;
+      subject: string;
+      tags: string[];
+      publicationConfidence: number;
+      supportScore: number;
+    }>(await readFile(join(repoRoot, ".codemap", "claims", "claims.ndjson"), "utf-8"));
+    const overview = await readFile(
+      join(repoRoot, ".codemap", "views", "knowledge", "overview.md"),
+      "utf-8",
+    );
+
+    const decisionClaim = claims.find((claim) =>
+      claim.type === "knowledge_decision" && claim.subject.includes("Polar"));
+    assert.ok(decisionClaim, "expected a knowledge_decision claim derived from the recorded note");
+    assert.ok(decisionClaim?.tags.includes("recorded"));
+    assert.ok(decisionClaim?.tags.includes(AI_RECORDED_TAG));
+    assert.ok(decisionClaim!.publicationConfidence <= 0.5);
+    assert.ok(decisionClaim!.supportScore <= 0.6);
+
+    assert.match(overview, /## Decisions/);
+    assert.match(overview, /\[recorded\] `Decided to use Polar for marketplace payouts/);
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }

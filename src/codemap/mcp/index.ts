@@ -11,6 +11,7 @@ import type {
   HistoryStorageStatus,
   PublishDecision,
   PublishIncident,
+  PublishIncidentSource,
   CombinedPublishPlan,
   PublishPlan,
   PublishRunRecord,
@@ -96,6 +97,7 @@ export interface CodemapToolClaimSummary {
   confidence: number;
   lastVerifiedAt?: string;
   tags: string[];
+  conflictCount: number;
 }
 
 export interface CodemapToolEvidenceResponse {
@@ -314,6 +316,7 @@ export interface CodemapIncidentSummary {
   knowledge: number;
   total: number;
   severityCounts: Array<{ severity: ConflictSeverity; count: number }>;
+  bySource: Array<{ source: PublishIncidentSource; severity: ConflictSeverity; count: number }>;
 }
 
 export interface CodemapCompatibilityStatusSummary {
@@ -380,7 +383,10 @@ interface CodemapScopeContext {
   conflicts: ConflictEdge[];
 }
 
-function summarizeClaim(claim: Claim): CodemapToolClaimSummary {
+function summarizeClaim(
+  claim: Claim,
+  conflictsByClaimId: Map<string, ConflictEdge[]>,
+): CodemapToolClaimSummary {
   return {
     claimId: claim.id,
     type: claim.type,
@@ -389,6 +395,7 @@ function summarizeClaim(claim: Claim): CodemapToolClaimSummary {
     confidence: claim.publicationConfidence,
     lastVerifiedAt: claim.lastVerifiedAt,
     tags: [...claim.tags].sort(),
+    conflictCount: conflictsByClaimId.get(claim.id)?.length ?? 0,
   };
 }
 
@@ -629,13 +636,23 @@ function summarizePublishPlan(plan: PublishPlan): CodemapPublishPlanSummary {
   };
 }
 
+const SEVERITY_RANK: Record<ConflictSeverity, number> = { high: 0, medium: 1, low: 2 };
+
 function summarizeIncidents(
   codeIncidents: PublishIncident[],
   knowledgeIncidents: PublishIncident[],
 ): CodemapIncidentSummary {
   const severityCounts = new Map<ConflictSeverity, number>();
+  const bySourceCounts = new Map<string, { source: PublishIncidentSource; severity: ConflictSeverity; count: number }>();
   for (const incident of [...codeIncidents, ...knowledgeIncidents]) {
     severityCounts.set(incident.severity, (severityCounts.get(incident.severity) ?? 0) + 1);
+    const key = `${incident.source}|${incident.severity}`;
+    const existing = bySourceCounts.get(key);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      bySourceCounts.set(key, { source: incident.source, severity: incident.severity, count: 1 });
+    }
   }
 
   return {
@@ -645,6 +662,11 @@ function summarizeIncidents(
     severityCounts: [...severityCounts.entries()]
       .map(([severity, count]) => ({ severity, count }))
       .sort((left, right) => left.severity.localeCompare(right.severity)),
+    bySource: [...bySourceCounts.values()].sort((left, right) => {
+      const severityDelta = SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity];
+      if (severityDelta !== 0) return severityDelta;
+      return left.source.localeCompare(right.source);
+    }),
   };
 }
 
@@ -916,7 +938,7 @@ export async function getCodemapOverview(
         quarantined: typedClaims.filter((claim) => claim.status === "quarantined").length,
       }))
       .sort((left, right) => compareClaimType(left.type, right.type)),
-    recentClaims: claims.slice(0, 10).map(summarizeClaim),
+    recentClaims: claims.slice(0, 10).map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
   };
 }
 
@@ -966,24 +988,24 @@ export async function getCodemapKnowledgeOverview(
     decisions: sortedNarrativeClaims
       .filter((claim) => claim.type === "knowledge_decision")
       .slice(0, 10)
-      .map(summarizeClaim),
+      .map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
     openQuestions: sortedNarrativeClaims
       .filter((claim) => claim.type === "knowledge_question")
       .slice(0, 10)
-      .map(summarizeClaim),
+      .map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
     themes: sortedNarrativeClaims
       .filter((claim) => claim.type === "knowledge_theme")
       .slice(0, 10)
-      .map(summarizeClaim),
+      .map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
     people: sortedNarrativeClaims
       .filter((claim) => claim.type === "knowledge_person")
       .slice(0, 10)
-      .map(summarizeClaim),
+      .map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
     summaries: includeSummaries
       ? sortedNarrativeClaims
           .filter((claim) => claim.type === "knowledge_summary")
           .slice(0, 10)
-          .map(summarizeClaim)
+          .map((claim) => summarizeClaim(claim, context.conflictsByClaimId))
       : [],
   };
 }
@@ -1004,7 +1026,7 @@ export async function searchCodemapClaims(
   const limit = Math.max(1, Math.min(args.limit ?? 10, 50));
   return {
     totalMatches: filtered.length,
-    claims: filtered.slice(0, limit).map(summarizeClaim),
+    claims: filtered.slice(0, limit).map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
   };
 }
 
@@ -1025,7 +1047,7 @@ export async function searchCodemapKnowledge(
   const limit = Math.max(1, Math.min(args.limit ?? 10, 50));
   return {
     totalMatches: filtered.length,
-    claims: filtered.slice(0, limit).map(summarizeClaim),
+    claims: filtered.slice(0, limit).map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
   };
 }
 
@@ -1088,7 +1110,7 @@ export async function getCodemapClaimHistory(
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id));
 
   return {
-    claim: summarizeClaim(claim),
+    claim: summarizeClaim(claim, context.conflictsByClaimId),
     totalEntries: history.length,
     history: history.slice(0, limit).map((entry) => ({
       ...entry,
@@ -1120,7 +1142,7 @@ export async function getCodemapClaimStateHistory(
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id));
 
   return {
-    claim: summarizeClaim(claim),
+    claim: summarizeClaim(claim, context.conflictsByClaimId),
     totalEntries: history.length,
     history: history.slice(0, limit).map((entry) => ({
       ...entry,
@@ -1215,7 +1237,11 @@ export async function getCodemapConflicts(
   }
 
   const uniqueConflicts = [...new Map(conflicts.map((conflict) => [conflict.id, conflict])).values()]
-    .sort((left, right) => left.id.localeCompare(right.id));
+    .sort((left, right) => {
+      const severityDelta = SEVERITY_RANK[left.severity] - SEVERITY_RANK[right.severity];
+      if (severityDelta !== 0) return severityDelta;
+      return left.id.localeCompare(right.id);
+    });
 
   return {
     totalConflicts: uniqueConflicts.length,
@@ -1291,7 +1317,7 @@ export async function getCodemapDiffSinceSnapshot(
     current,
     contentDiff: buildSnapshotContentDiff(storedContent, currentContent),
     totalActiveClaims: activeClaims.length,
-    activeClaims: activeClaims.slice(0, claimLimit).map(summarizeClaim),
+    activeClaims: activeClaims.slice(0, claimLimit).map((claim) => summarizeClaim(claim, context.conflictsByClaimId)),
   };
 }
 
@@ -1496,9 +1522,11 @@ export function formatCodemapSearchClaims(result: CodemapSearchClaimsResponse): 
   const lines = [
     `${result.totalMatches} matching CodeMap claim${result.totalMatches === 1 ? "" : "s"}`,
     "",
-    ...result.claims.map((claim) =>
-      `- ${claim.claimId} | ${claim.type} | [${claim.status}] ${claim.subject}${claim.tags.length > 0 ? ` | tags: ${claim.tags.join(", ")}` : ""}`,
-    ),
+    ...result.claims.map((claim) => {
+      const conflictPart = claim.conflictCount > 0 ? ` | conflicts: ${claim.conflictCount}` : "";
+      const tagPart = claim.tags.length > 0 ? ` | tags: ${claim.tags.join(", ")}` : "";
+      return `- ${claim.claimId} | ${claim.type} | [${claim.status}] ${claim.subject}${conflictPart}${tagPart}`;
+    }),
   ];
 
   return lines.join("\n");
@@ -1839,6 +1867,9 @@ export function formatCodemapPublishStatus(response: CodemapPublishStatusRespons
   );
   if (response.incidents.severityCounts.length > 0) {
     lines.push(...response.incidents.severityCounts.map((entry) => `- ${entry.severity}: ${entry.count}`));
+  }
+  if (response.incidents.bySource.length > 0) {
+    lines.push(...response.incidents.bySource.map((entry) => `- ${entry.source} [${entry.severity}]: ${entry.count}`));
   }
 
   if (response.compatibility.code || response.compatibility.knowledge) {
