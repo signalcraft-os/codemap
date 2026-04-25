@@ -5,3 +5,4 @@ dist/
 docs/superpowers/
 package-lock.json
 tests/fixtures/
+.claude/
