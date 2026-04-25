@@ -24,10 +24,11 @@ Implemented and green:
 - `codemap_record_decision` MCP tool: AI sessions persist in-conversation decisions to `notes/decisions/recorded/<timestamp>-<slug>.md`; resulting `knowledge_decision` claims are tagged `recorded` with lower default confidence (0.5 / 0.6) so a human can review and promote
 - `[recorded]` marker in `.codemap/views/knowledge/overview.md` for AI-recorded decisions
 
-Latest verification (2026-04-25):
+Latest verification (2026-04-25, after dogfood session):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `123` passing, `0` failing
+- result: `128` passing, `0` failing
+- last commit: `f0a5d41` (knowledge extractor hygiene + incident scope + unified `--codemap` default)
 
 ## Documentation
 
@@ -38,6 +39,14 @@ Latest verification (2026-04-25):
 ## Recent Cumulative Changes (2026-04-23 → 2026-04-25)
 
 Grouped by phase, newest first.
+
+### First dogfood audit + adoption-blocker fixes (2026-04-25, commit `f0a5d41`)
+- Ran `node dist/index.js --codemap` against this repo and inspected what CodeMap says about itself. Invariants #1, #3, #5, #6 were all observably enforced; the audit surfaced three real gaps that would degrade the AI adoption story before it started.
+- **G1 — knowledge extractor hygiene** ([src/detectors/knowledge.ts](../src/detectors/knowledge.ts)): `extractDecisions` now runs against `stripExampleSections(stripBlockquoteLines(stripCodeBlocks(content)))` instead of raw markdown. Two new helpers drop `>` blockquotes and content under `## Example` / `## Bad` / `## Good` / `## Don't` / `## Anti-pattern` / `## Counter-example` headings. Without this, README fenced-code demos and architecture-doc teaching examples (the "Polar over Stripe Connect" / "use Polar globally" example block in `docs/codemap-architecture.md` §10, the KNOWLEDGE.md sample output in `README.md` §122-123) emitted real `[verified]` `knowledge_decision` claims — direct invariant #2 risk. Decision count on this repo went from 3 phantom decisions to 0.
+- **G3 — knowledge incidents scoped to knowledge claims** ([src/codemap/publish/claim-health-incidents.ts](../src/codemap/publish/claim-health-incidents.ts), [src/codemap/publish/knowledge-pipeline.ts](../src/codemap/publish/knowledge-pipeline.ts)): `buildClaimHealthIncidents` now skips conflict edges whose endpoints are not both in the caller's claim set. The knowledge pipeline passes `finalKnowledgeClaims` (knowledge-only) instead of `rawState.claims` (the full canonical store including code claims preserved across runs). Stops code-domain middleware conflicts from being re-emitted into `knowledge-incidents.ndjson` and double-counted by `codemap_get_publish_status`. On this repo: incident `total` went from `5` (inflated) to `3` (correct: 1 compatibility-missing + 2 unique conflicts).
+- **G2 — default `--codemap` runs both pipelines** ([src/index.ts](../src/index.ts)): adoption-quickstart §1 said `npx codesight --codemap` produces `.codemap/views/knowledge/overview.md` and `.codemap/publish/knowledge-incidents.ndjson`, but the CLI only ran the code pipeline. Now tracks `modeExplicit` and auto-runs `runKnowledgeScan` (with `quiet: true`) when `doCodemap && !modeExplicit && !doWatch`. `--mode code --codemap` and `--mode knowledge --codemap` remain as scoped escape hatches. [docs/codemap-quickstart.md](codemap-quickstart.md) §1 updated to mention the unified default.
+- Three regression tests added ([tests/codemap.test.ts](../tests/codemap.test.ts)): one fixture-based test for G1 (asserts demonstration phrases inside fenced code, blockquotes, and Example sections do not become decisions while real ADR `## Decision` content still does), one unit test for G3 (`buildClaimHealthIncidents` skips conflicts whose endpoints aren't in the caller's claim set), one CLI-subprocess test for G2 with two subtests (default `--codemap` produces `views/knowledge/overview.md` + `knowledge-incidents.ndjson`; `--mode code --codemap` does not).
+- One-off MCP harness `scripts/dogfood-mcp.mjs` left on disk (untracked) — exercises `codemap_get_overview` / `_publish_status` / `_conflicts` / `_search_claims` / `_get_knowledge_overview` end-to-end through the formatters. Useful for future audits; delete if you don't want it.
 
 ### Inferred provenance survives status flips (2026-04-25)
 - `knowledge.ts toSummaryLine` and `compatibility-wiki.ts toStatusBadge` now append a defensive `[inferred]` label when `tags.includes("inferred") && status !== "inferred"`, mirroring what `code.ts` and `routes.ts` already did ([src/codemap/render/views/knowledge.ts](../src/codemap/render/views/knowledge.ts), [src/codemap/render/views/compatibility-wiki.ts](../src/codemap/render/views/compatibility-wiki.ts))
@@ -82,12 +91,17 @@ Grouped by phase, newest first.
 
 In rough priority order, with short rationale:
 
-1. **Dogfood CodeMap on this repository** — quickstart docs and the conflict-surfacing + inferred-provenance work are now in. Run `node dist/index.js --codemap` from the repo root and inspect `.codemap/views/*` and the incident streams. This is the first chance to see what CodeMap says about itself; expect to find at least one real gap or ergonomic problem worth fixing.
-2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
-3. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
-4. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
-5. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back this session as scope creep; revisit if AI sessions report missing the signal in those tools.
-6. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
+1. **Watch-mode parity with the G2 unified default** ([src/codemap/runtime/watch.ts] etc.) — `--watch --codemap` still triggers only the code pipeline on file changes, so knowledge claims go stale on every code-file save. This is the only place the auto-run-both-pipelines story is incomplete. Likely shape: also debounce-trigger the knowledge pipeline on `*.md` changes (and on code changes if any decision claims reference code-related notes). Symmetric follow-up to the G2 commit; not a blocker for adoption but conspicuous if anyone enables watch mode.
+2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of `codemap_record_decision`. Still defer until the decision tool is proven in real use; the dogfood session didn't generate any real recorded decisions yet (the example "Adopt Polar for marketplace payouts" was test-fixture text), so the AI-recording path is unproven on a real session.
+3. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back from the conflict-surfacing session as scope creep; revisit if AI sessions report missing the signal in those tools.
+4. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
+5. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+6. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+
+### Audited but not fixed (configuration, not bugs)
+
+- **G4 — test-fixture markdown polluting knowledge summaries.** `tests/fixtures/monorepo-init*/AGENTS.md` etc. show up as `[inferred]` Note Summaries on this repo. Real fix is a `.codesightignore` entry (`tests/fixtures/**`) — knowledge mode already honors that file. Hardcoding the path into the tool is opinionated and helps no one but us. Add the ignore entry if/when self-dogfood output noise actually bothers someone.
+- **G5 — self-referential routes/middleware on detector source.** `src/detectors/routes.ts` etc. get scanned for routes; `src/codemap/extract/code/middleware.ts` etc. get classified as middleware. All correctly labeled `[inferred]`, and the resulting conflicts surface (invariants #5 + #6 hold). Only relevant on this exact repo. Same disposition as G4: configuration, not a code bug.
 
 ## Scheduled Follow-Ups
 
