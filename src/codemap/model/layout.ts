@@ -18,6 +18,8 @@ export const CODEMAP_DIRECTORIES = {
   archive: `${CODEMAP_ROOT_DIR}/archive`,
   archiveSegments: `${CODEMAP_ROOT_DIR}/archive/segments`,
   archiveSnapshotSegments: `${CODEMAP_ROOT_DIR}/archive/snapshots`,
+  archiveSnapshotFiles: `${CODEMAP_ROOT_DIR}/archive/snapshots/files`,
+  archiveSnapshotContents: `${CODEMAP_ROOT_DIR}/archive/snapshots/content`,
   conflicts: `${CODEMAP_ROOT_DIR}/conflicts`,
   publish: `${CODEMAP_ROOT_DIR}/publish`,
   views: `${CODEMAP_ROOT_DIR}/views`,

@@ -186,6 +186,8 @@ function normalizeSnapshotArchiveSegment(segment: SnapshotArchiveSegment): Snaps
     bytes: Math.max(0, Math.floor(segment.bytes)),
     sizeBytes: Math.max(0, Math.floor(segment.sizeBytes)),
     bundlePath: segment.bundlePath,
+    metadataPath: segment.metadataPath,
+    contentPath: segment.contentPath,
   };
 }
 
@@ -246,6 +248,16 @@ function getHotSnapshotContentPath(repoRoot: string, snapshotId: string): string
 function getSnapshotArchiveSegmentFile(snapshotId: string): string {
   const basename = createHash("sha256").update(snapshotId).digest("hex");
   return `${CODEMAP_DIRECTORIES.archiveSnapshotSegments}/${basename}.json.gz`;
+}
+
+function getSnapshotArchiveMetadataFile(snapshotId: string): string {
+  const basename = createHash("sha256").update(snapshotId).digest("hex");
+  return `${CODEMAP_DIRECTORIES.archiveSnapshotFiles}/${basename}.json`;
+}
+
+function getSnapshotArchiveContentFile(snapshotId: string): string {
+  const basename = createHash("sha256").update(snapshotId).digest("hex");
+  return `${CODEMAP_DIRECTORIES.archiveSnapshotContents}/${basename}.txt.gz`;
 }
 
 async function fileExists(path: string): Promise<boolean> {
@@ -457,13 +469,15 @@ async function readExistingArchivedSnapshotSegments(
   const resolved: SnapshotArchiveSegment[] = [];
 
   for (const segment of archivedSegments) {
-    if (!segment.bundlePath) {
+    if (segment.metadataPath
+      && (await fileExists(resolveCodemapPath(repoRoot, segment.metadataPath)))) {
+      resolved.push(segment);
       continue;
     }
-    if (!(await fileExists(resolveCodemapPath(repoRoot, segment.bundlePath)))) {
-      continue;
+    if (segment.bundlePath
+      && (await fileExists(resolveCodemapPath(repoRoot, segment.bundlePath)))) {
+      resolved.push(segment);
     }
-    resolved.push(segment);
   }
 
   return resolved.sort(compareSnapshotArchiveSegment);
@@ -484,7 +498,7 @@ async function readSnapshotArchiveBundle(
 async function materializeSnapshotArchiveSegments(
   repoRoot: string,
   segments: SnapshotArchiveSegment[],
-  mode: CodemapHistoryPolicyMode,
+  _mode: CodemapHistoryPolicyMode,
 ): Promise<SnapshotArchiveSegment[]> {
   const materialized: SnapshotArchiveSegment[] = [];
 
@@ -494,32 +508,35 @@ async function materializeSnapshotArchiveSegments(
       continue;
     }
 
-    let content: string | undefined;
+    let compressedContent: Buffer | undefined;
     try {
-      const compressedContent = await readFile(getHotSnapshotContentPath(repoRoot, segment.snapshotId));
-      content = gunzipSync(compressedContent).toString("utf-8");
+      compressedContent = await readFile(getHotSnapshotContentPath(repoRoot, segment.snapshotId));
     } catch {}
 
-    const bundle: SnapshotArchiveBundle = {
-      version: 1,
-      segmentId: segment.id,
-      createdAt: segment.createdAt,
-      mode,
-      snapshot,
-      content,
-    };
-    const bundlePath = getSnapshotArchiveSegmentFile(segment.snapshotId);
-    const absoluteBundlePath = resolveCodemapPath(repoRoot, bundlePath);
-    await mkdir(dirname(absoluteBundlePath), { recursive: true });
-    const compressedBundle = gzipSync(Buffer.from(JSON.stringify(bundle), "utf-8"));
-    await writeFile(absoluteBundlePath, compressedBundle);
+    const metadataPath = getSnapshotArchiveMetadataFile(segment.snapshotId);
+    const absoluteMetadataPath = resolveCodemapPath(repoRoot, metadataPath);
+    await mkdir(dirname(absoluteMetadataPath), { recursive: true });
+    const metadataBytes = Buffer.from(`${JSON.stringify(snapshot, null, 2)}\n`, "utf-8");
+    await writeFile(absoluteMetadataPath, metadataBytes);
+
+    let contentPath: string | undefined;
+    let contentBytes = 0;
+    if (compressedContent) {
+      contentPath = getSnapshotArchiveContentFile(segment.snapshotId);
+      const absoluteContentPath = resolveCodemapPath(repoRoot, contentPath);
+      await mkdir(dirname(absoluteContentPath), { recursive: true });
+      await writeFile(absoluteContentPath, compressedContent);
+      contentBytes = compressedContent.byteLength;
+    }
 
     materialized.push({
       ...segment,
       state: "archived",
       compression: "gzip",
-      bundlePath,
-      bytes: compressedBundle.byteLength,
+      bundlePath: undefined,
+      metadataPath,
+      contentPath,
+      bytes: metadataBytes.byteLength + contentBytes,
       sizeBytes: snapshot.sizeBytes,
     });
   }
@@ -531,12 +548,24 @@ async function cleanupSnapshotArchiveFiles(
   repoRoot: string,
   segments: SnapshotArchiveSegment[],
 ): Promise<void> {
-  const expectedFiles = new Set(
+  const expectedBundleFiles = new Set(
     segments
       .map((segment) => segment.bundlePath?.split("/").at(-1))
       .filter((name): name is string => Boolean(name)),
   );
+  const expectedMetadataFiles = new Set(
+    segments
+      .map((segment) => segment.metadataPath?.split("/").at(-1))
+      .filter((name): name is string => Boolean(name)),
+  );
+  const expectedContentFiles = new Set(
+    segments
+      .map((segment) => segment.contentPath?.split("/").at(-1))
+      .filter((name): name is string => Boolean(name)),
+  );
   const archiveDir = resolveCodemapPath(repoRoot, CODEMAP_DIRECTORIES.archiveSnapshotSegments);
+  const filesDir = resolveCodemapPath(repoRoot, CODEMAP_DIRECTORIES.archiveSnapshotFiles);
+  const contentsDir = resolveCodemapPath(repoRoot, CODEMAP_DIRECTORIES.archiveSnapshotContents);
 
   try {
     const existingFiles = await readdir(archiveDir, { withFileTypes: true });
@@ -544,8 +573,32 @@ async function cleanupSnapshotArchiveFiles(
       if (!file.isFile() || !file.name.endsWith(".json.gz")) {
         continue;
       }
-      if (!expectedFiles.has(file.name)) {
+      if (!expectedBundleFiles.has(file.name)) {
         await rm(join(archiveDir, file.name), { force: true });
+      }
+    }
+  } catch {}
+
+  try {
+    const existingFiles = await readdir(filesDir, { withFileTypes: true });
+    for (const file of existingFiles) {
+      if (!file.isFile() || !file.name.endsWith(".json")) {
+        continue;
+      }
+      if (!expectedMetadataFiles.has(file.name)) {
+        await rm(join(filesDir, file.name), { force: true });
+      }
+    }
+  } catch {}
+
+  try {
+    const existingFiles = await readdir(contentsDir, { withFileTypes: true });
+    for (const file of existingFiles) {
+      if (!file.isFile() || !file.name.endsWith(".txt.gz")) {
+        continue;
+      }
+      if (!expectedContentFiles.has(file.name)) {
+        await rm(join(contentsDir, file.name), { force: true });
       }
     }
   } catch {}
@@ -559,8 +612,9 @@ function buildSnapshotArchiveIndex(
     version: 1,
     generatedAt,
     snapshots: segments
-      .filter((segment): segment is SnapshotArchiveSegment & { bundlePath: string } =>
-        segment.state === "archived" && Boolean(segment.bundlePath))
+      .filter((segment) =>
+        segment.state === "archived"
+        && (Boolean(segment.metadataPath) || Boolean(segment.bundlePath)))
       .map((segment) => ({
         snapshotId: segment.snapshotId,
         sourcePath: segment.sourcePath,
@@ -570,6 +624,8 @@ function buildSnapshotArchiveIndex(
         bytes: segment.bytes,
         segmentId: segment.id,
         bundlePath: segment.bundlePath,
+        metadataPath: segment.metadataPath,
+        contentPath: segment.contentPath,
       }))
       .sort(compareSnapshotArchiveIndexEntry),
   };
@@ -1396,6 +1452,17 @@ export async function readArchivedSnapshotById(
   if (!entry) {
     return null;
   }
+
+  if (entry.metadataPath) {
+    const shard = await readJsonFile<SourceSnapshot>(resolveCodemapPath(repoRoot, entry.metadataPath));
+    if (shard) {
+      return shard;
+    }
+  }
+
+  if (!entry.bundlePath) {
+    return null;
+  }
   const bundle = await readSnapshotArchiveBundle(repoRoot, entry.bundlePath);
   return bundle?.snapshot ?? null;
 }
@@ -1407,6 +1474,17 @@ export async function readArchivedSnapshotContentById(
   const index = await readSnapshotArchiveIndex(repoRoot);
   const entry = index?.snapshots.find((item) => item.snapshotId === snapshotId);
   if (!entry) {
+    return null;
+  }
+
+  if (entry.contentPath) {
+    try {
+      const compressed = await readFile(resolveCodemapPath(repoRoot, entry.contentPath));
+      return gunzipSync(compressed).toString("utf-8");
+    } catch {}
+  }
+
+  if (entry.metadataPath || !entry.bundlePath) {
     return null;
   }
   const bundle = await readSnapshotArchiveBundle(repoRoot, entry.bundlePath);
