@@ -27,7 +27,7 @@ Implemented and green:
 Latest verification (2026-04-25):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `117` passing, `0` failing
+- result: `121` passing, `0` failing
 
 ## Documentation
 
@@ -38,6 +38,12 @@ Latest verification (2026-04-25):
 ## Recent Cumulative Changes (2026-04-23 → 2026-04-25)
 
 Grouped by phase, newest first.
+
+### Conflict surfacing in MCP responses (2026-04-25)
+- `codemap_search_claims` / `codemap_search_knowledge` now expose `conflictCount` per claim summary; the search formatter prints `| conflicts: N` so AI sessions see conflict membership at search time without a per-claim drill-in ([src/codemap/mcp/index.ts](../src/codemap/mcp/index.ts))
+- `codemap_get_publish_status` incident summary gains a `bySource` breakdown grouping by `(source, severity)` so AI sessions can tell whether a high-severity count means conflicts vs. stale critical claims and pick the right drill-in tool ([src/codemap/mcp/index.ts](../src/codemap/mcp/index.ts))
+- `codemap_get_conflicts` orders results by severity rank (high → medium → low) before slicing to `limit`, so a truncated list keeps high-severity edges instead of whichever conflicts had alphabetically-early IDs ([src/codemap/mcp/index.ts](../src/codemap/mcp/index.ts))
+- Closes the conflict-surfacing audit punch-list item; architecture invariant #6 ("conflicts must be visible") is now end-to-end enforced at the per-claim, per-status, and per-drill-in surfaces
 
 ### Adoption-facing (2026-04-25)
 - New `docs/codemap-quickstart.md` — install + modes + incidents reference + AI adoption template
@@ -71,10 +77,11 @@ Grouped by phase, newest first.
 
 In rough priority order, with short rationale:
 
-1. **Conflict surfacing audit in MCP responses** — verify that `codemap_get_claim` / `codemap_search_claims` make conflict membership visible (not just status). Architecture invariant #6 says "conflicts must be visible." This is an *investigation*, not yet an implementation: the audit might find everything is fine (no work needed) or might surface a real gap. Do this in a clean session that re-reads `src/codemap/mcp/index.ts` from scratch.
-2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
-3. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
-4. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+1. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
+2. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+3. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+4. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back this session as scope creep; revisit if AI sessions report missing the signal in those tools.
+5. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
 
 ## Scheduled Follow-Ups
 
