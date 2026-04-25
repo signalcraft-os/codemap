@@ -44,7 +44,11 @@ function getPrimarySourcePath(claim: Claim, snapshotsById: Map<string, SourceSna
 
 function toSummaryLine(claim: Claim, snapshotsById: Map<string, SourceSnapshot>): string {
   const prefix = claim.tags.includes("recorded") ? "[recorded] " : "";
-  return `- ${prefix}\`${claim.subject}\` [${claim.status}] — ${claim.text} (\`${getPrimarySourcePath(claim, snapshotsById)}\`)`;
+  const labels = [`[${claim.status}]`];
+  if (claim.tags.includes("inferred") && claim.status !== "inferred") {
+    labels.push("[inferred]");
+  }
+  return `- ${prefix}\`${claim.subject}\` ${labels.join(" ")} — ${claim.text} (\`${getPrimarySourcePath(claim, snapshotsById)}\`)`;
 }
 
 function isKnowledgeClaimType(type: Claim["type"]): boolean {

@@ -46,6 +46,8 @@ import {
   publishRouteCodemap,
   RECORDED_DECISIONS_DIR,
   recordDecision,
+  renderCompatibilityWiki,
+  renderKnowledgeViews,
   summarizeChangedFiles,
 } from "../dist/codemap/index.js";
 import { scan } from "../dist/core.js";
@@ -3344,6 +3346,92 @@ test("CodeMap publish status summarizes latest run, refresh scope, and storage s
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
   }
+});
+
+test("renderKnowledgeViews labels a stale-but-originally-inferred decision so the inferred provenance survives status flip", () => {
+  const snapshot = {
+    id: "snapshot:note-decisions",
+    sourcePath: "notes/decisions/payments.md",
+    sourceKind: "note" as const,
+    contentHash: "hash-decisions",
+    createdAt: "2026-04-25T12:00:00.000Z",
+    sizeBytes: 100,
+  };
+  const staleInferredDecision = {
+    id: "claim:knowledge-payments",
+    type: "knowledge_decision" as const,
+    subject: "Payments rails",
+    text: "Team picked Polar over Stripe Connect.",
+    sourceSnapshotIds: [snapshot.id],
+    evidenceSpanIds: ["evidence:knowledge-payments"],
+    status: "stale" as const,
+    supportScore: 0.7,
+    publicationConfidence: 0.6,
+    firstSeenAt: "2026-04-22T12:00:00.000Z",
+    lastVerifiedAt: "2026-04-25T12:00:00.000Z",
+    tags: ["decision", "inferred"],
+  };
+  const verifiedDecision = {
+    ...staleInferredDecision,
+    id: "claim:knowledge-deploys",
+    subject: "Deploy cadence",
+    text: "Team merges to main daily.",
+    status: "verified" as const,
+    tags: ["decision"],
+  };
+
+  const views = renderKnowledgeViews([staleInferredDecision, verifiedDecision], [snapshot], [], "2026-04-25T12:00:00.000Z");
+  const overview = views.find((view) => view.path.endsWith("knowledge/overview.md"));
+  assert.ok(overview, "knowledge overview view should be produced");
+
+  assert.match(overview!.markdown, /Payments rails`\s+\[stale\]\s+\[inferred\]/);
+  assert.ok(!/Deploy cadence`\s+\[verified\]\s+\[inferred\]/.test(overview!.markdown), "verified non-inferred decision should not get the inferred label");
+});
+
+test("renderCompatibilityWiki labels stale-but-originally-inferred routes so legacy wiki readers see the regex provenance", () => {
+  const snapshot = {
+    id: "snapshot:routes",
+    sourcePath: "src/routes.ts",
+    sourceKind: "code" as const,
+    contentHash: "hash-routes",
+    createdAt: "2026-04-25T12:00:00.000Z",
+    language: "typescript",
+    sizeBytes: 120,
+  };
+  const staleInferredRoute = {
+    id: "claim:route-stale-inferred",
+    type: "route" as const,
+    subject: "GET /legacy",
+    text: "GET /legacy is defined in src/routes.ts.",
+    sourceSnapshotIds: [snapshot.id],
+    evidenceSpanIds: ["evidence:route-legacy"],
+    status: "stale" as const,
+    supportScore: 0.72,
+    publicationConfidence: 0.72,
+    firstSeenAt: "2026-04-22T12:00:00.000Z",
+    lastVerifiedAt: "2026-04-25T12:00:00.000Z",
+    tags: ["api", "route", "framework:express", "method:GET", "inferred"],
+  };
+  const verifiedRoute = {
+    ...staleInferredRoute,
+    id: "claim:route-verified",
+    subject: "GET /current",
+    text: "GET /current is defined in src/routes.ts.",
+    status: "verified" as const,
+    tags: ["api", "route", "framework:express", "method:GET"],
+  };
+
+  const views = renderCompatibilityWiki({
+    projectName: "test",
+    claims: [staleInferredRoute, verifiedRoute],
+    conflicts: [],
+    snapshots: [snapshot],
+    generatedAt: "2026-04-25T12:00:00.000Z",
+  });
+  const merged = views.map((view) => view.markdown).join("\n\n");
+
+  assert.match(merged, /GET`\s+`\/legacy`\s+\[stale\]\s+\[inferred\]/);
+  assert.ok(!/GET`\s+`\/current`\s+\[verified\]\s+\[inferred\]/.test(merged), "verified non-inferred route should not get the inferred label");
 });
 
 test("getCodemapConflicts orders results by severity rank so truncated lists keep high-severity edges", async () => {

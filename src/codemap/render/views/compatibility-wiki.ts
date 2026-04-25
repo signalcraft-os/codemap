@@ -230,6 +230,9 @@ function renderClaimIdComment(claims: Claim[]): string {
 }
 
 function toStatusBadge(claim: Claim): string {
+  if (claim.tags.includes("inferred") && claim.status !== "inferred") {
+    return `[${claim.status}] [inferred]`;
+  }
   return `[${claim.status}]`;
 }
 
