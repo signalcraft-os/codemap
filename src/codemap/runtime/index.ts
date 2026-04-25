@@ -681,16 +681,40 @@ export function buildGitHookScript(options: CodemapHookScriptOptions): string {
   ];
 
   if (includeCodemap) {
+    const incidentsPath = `${CODEMAP_ROOT_DIR}/publish/incidents.ndjson`;
+    const knowledgeIncidentsPath = `${CODEMAP_ROOT_DIR}/publish/knowledge-incidents.ndjson`;
+    const dollar = "$";
     lines.push(
       `CODEMAP_POLICY=\"\${CODESIGHT_CODEMAP_POLICY:-${defaultPolicy}}\"`,
-      `if [ -f "${CODEMAP_ROOT_DIR}/publish/incidents.ndjson" ] && [ -s "${CODEMAP_ROOT_DIR}/publish/incidents.ndjson" ]; then`,
-      `  INCIDENT_COUNT=$(wc -l < "${CODEMAP_ROOT_DIR}/publish/incidents.ndjson" | tr -d '[:space:]')`,
-      `  if [ "$CODEMAP_POLICY" = "block" ]; then`,
-      `    echo "codesight: blocking commit due to ${'$'}INCIDENT_COUNT CodeMap migration incident(s)."`,
+      "CODEMAP_HIGH=0",
+      "CODEMAP_MEDIUM=0",
+      "CODEMAP_LOW=0",
+      `for CODEMAP_FILE in "${incidentsPath}" "${knowledgeIncidentsPath}"; do`,
+      `  if [ -f "${dollar}CODEMAP_FILE" ] && [ -s "${dollar}CODEMAP_FILE" ]; then`,
+      `    CODEMAP_FILE_HIGH=$(grep -c '"severity":"high"' "${dollar}CODEMAP_FILE" 2>/dev/null)`,
+      `    CODEMAP_FILE_MEDIUM=$(grep -c '"severity":"medium"' "${dollar}CODEMAP_FILE" 2>/dev/null)`,
+      `    CODEMAP_FILE_LOW=$(grep -c '"severity":"low"' "${dollar}CODEMAP_FILE" 2>/dev/null)`,
+      `    [ -z "${dollar}CODEMAP_FILE_HIGH" ] && CODEMAP_FILE_HIGH=0`,
+      `    [ -z "${dollar}CODEMAP_FILE_MEDIUM" ] && CODEMAP_FILE_MEDIUM=0`,
+      `    [ -z "${dollar}CODEMAP_FILE_LOW" ] && CODEMAP_FILE_LOW=0`,
+      "    CODEMAP_HIGH=$((CODEMAP_HIGH + CODEMAP_FILE_HIGH))",
+      "    CODEMAP_MEDIUM=$((CODEMAP_MEDIUM + CODEMAP_FILE_MEDIUM))",
+      "    CODEMAP_LOW=$((CODEMAP_LOW + CODEMAP_FILE_LOW))",
+      "  fi",
+      "done",
+      `if [ "${dollar}CODEMAP_HIGH" -gt 0 ] || [ "${dollar}CODEMAP_MEDIUM" -gt 0 ] || [ "${dollar}CODEMAP_LOW" -gt 0 ]; then`,
+      `  if [ "$CODEMAP_POLICY" = "block" ] && [ "${dollar}CODEMAP_HIGH" -gt 0 ]; then`,
+      `    echo "codesight: blocking commit due to ${dollar}CODEMAP_HIGH high-severity CodeMap incident(s). Run codesight --codemap to inspect."`,
       "    exit 1",
       "  fi",
-      `  if [ "$CODEMAP_POLICY" = "warn" ]; then`,
-      `    echo "codesight: warning ${'$'}INCIDENT_COUNT CodeMap migration incident(s). Set CODESIGHT_CODEMAP_POLICY=block to enforce."`,
+      `  if [ "$CODEMAP_POLICY" = "warn" ] && [ "${dollar}CODEMAP_HIGH" -gt 0 ]; then`,
+      `    echo "codesight: warning ${dollar}CODEMAP_HIGH high-severity CodeMap incident(s). Set CODESIGHT_CODEMAP_POLICY=block to enforce."`,
+      "  fi",
+      `  if [ "$CODEMAP_POLICY" = "warn" ] && [ "${dollar}CODEMAP_MEDIUM" -gt 0 ]; then`,
+      `    echo "codesight: warning ${dollar}CODEMAP_MEDIUM medium-severity CodeMap incident(s)."`,
+      "  fi",
+      `  if [ "$CODEMAP_POLICY" = "shadow" ]; then`,
+      `    echo "codesight: shadow mode observed CodeMap incidents (high=${dollar}CODEMAP_HIGH medium=${dollar}CODEMAP_MEDIUM low=${dollar}CODEMAP_LOW); commit allowed."`,
       "  fi",
       "fi",
     );

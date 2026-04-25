@@ -15,6 +15,7 @@ import {
   getWatchIgnoreDirs,
   summarizeChangedFiles,
   summarizeCodemapRefreshPlan,
+  type CodemapHookPolicy,
 } from "./codemap/runtime/index.js";
 import { loadConfig, mergeCliConfig } from "./config.js";
 import { scan, BRAND, VERSION } from "./core.js";
@@ -33,6 +34,7 @@ function printHelp() {
     --init                   Generate AI config files (CLAUDE.md, .cursorrules, etc.)
     --watch                  Re-scan on file changes (use with --wiki/--codemap to refresh derived outputs)
     --hook                   Install git pre-commit hook (dual-write with --codemap)
+    --codemap-policy <mode>  Default CodeMap hook policy baked into the installed hook script (shadow|warn|block; default: warn). Env CODESIGHT_CODEMAP_POLICY overrides at commit time.
     --html                   Generate interactive HTML report
     --open                   Generate HTML report and open in browser
     --mcp                    Start as MCP server (for Claude Code, Cursor)
@@ -64,6 +66,7 @@ function printHelp() {
     npx ${BRAND} --watch --codemap       # Watch mode with CodeMap refresh + scan-state
     npx ${BRAND} --mcp                   # Start MCP server
     npx ${BRAND} --hook                  # Install git pre-commit hook
+    npx ${BRAND} --hook --codemap --codemap-policy shadow # Install hook with shadow policy default (safe for adoption)
     npx ${BRAND} --max-tokens 50000      # Fit output in 50K token budget
     npx ${BRAND} --since HEAD~5          # Show routes from last 5 commits
     npx ${BRAND} --telemetry             # Measure real token savings
@@ -85,7 +88,12 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
-async function installGitHook(root: string, outputDirName: string, codemapMode = false) {
+async function installGitHook(
+  root: string,
+  outputDirName: string,
+  codemapMode = false,
+  codemapPolicy: CodemapHookPolicy = "warn",
+) {
   const hooksDir = join(root, ".git", "hooks");
   const hookPath = join(hooksDir, "pre-commit");
 
@@ -106,7 +114,7 @@ async function installGitHook(root: string, outputDirName: string, codemapMode =
     outputDirName,
     includeWiki: true,
     includeCodemap: codemapMode,
-    defaultPolicy: "warn",
+    defaultPolicy: codemapPolicy,
   });
   const hookBlockPattern = /\n?# codesight: begin[\s\S]*?# codesight: end\n?/m;
   const existingHookBlock = existingContent.match(hookBlockPattern)?.[0] ?? "";
@@ -128,7 +136,7 @@ async function installGitHook(root: string, outputDirName: string, codemapMode =
   const { chmod } = await import("node:fs/promises");
   await chmod(hookPath, 0o755);
 
-  console.log(`  Git pre-commit hook installed at .git/hooks/pre-commit${codemapMode ? " (wiki + CodeMap dual-write)" : ""}`);
+  console.log(`  Git pre-commit hook installed at .git/hooks/pre-commit${codemapMode ? ` (wiki + CodeMap dual-write, policy default: ${codemapPolicy})` : ""}`);
 }
 
 async function watchMode(
@@ -401,6 +409,7 @@ async function main() {
   let doRefresh = false;
   let refreshPackage = "";
   let codemapTrigger: "cli" | "hook" = "cli";
+  let codemapPolicy: CodemapHookPolicy = "warn";
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -450,6 +459,13 @@ async function main() {
       }
     } else if (arg === "--hook-run") {
       codemapTrigger = "hook";
+    } else if (arg === "--codemap-policy" && args[i + 1]) {
+      const value = args[++i];
+      if (value === "shadow" || value === "warn" || value === "block") {
+        codemapPolicy = value;
+      } else {
+        console.warn(`  --codemap-policy must be one of shadow, warn, block (got: ${value}; ignoring)`);
+      }
     } else if (!arg.startsWith("-")) {
       targetDir = resolve(arg);
     }
@@ -501,7 +517,7 @@ async function main() {
 
   // Install git hook
   if (doHook) {
-    await installGitHook(root, outputDirName, doCodemap);
+    await installGitHook(root, outputDirName, doCodemap, codemapPolicy);
   }
 
   // --refresh: rebuild monorepo packages and exit
