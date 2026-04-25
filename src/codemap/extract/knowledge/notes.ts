@@ -4,8 +4,13 @@ import { join } from "node:path";
 import type { KnowledgeMap, KnowledgeNote } from "../../../types.js";
 import { makeHashedCodemapId } from "../../model/ids.js";
 import type { Claim, ClaimStatus, ClaimType, EvidenceSpan, SourceSnapshot } from "../../model/types.js";
+import { AI_RECORDED_TAG } from "../../notes/record-decision.js";
 import { createSourceSnapshot } from "../../snapshot/snapshotter.js";
 import { createSourcePathMatcher, type SourcePathFilterOptions } from "../code/source-path-filter.js";
+
+const RECORDED_DECISION_SUPPORT_SCORE = 0.6;
+const RECORDED_DECISION_PUBLICATION_CONFIDENCE = 0.5;
+const RECORDED_CLAIM_TAG = "recorded" as const;
 
 export interface KnowledgeClaimGraph {
   snapshots: SourceSnapshot[];
@@ -205,10 +210,16 @@ function buildDecisionClaims(
   previousClaimsById: Map<string, Claim>,
 ): Array<{ claim: Claim; evidence: EvidenceSpan }> {
   const claims: Array<{ claim: Claim; evidence: EvidenceSpan }> = [];
+  const isRecorded = noteContent.note.tags.includes(AI_RECORDED_TAG);
+  const supportScore = isRecorded ? RECORDED_DECISION_SUPPORT_SCORE : 0.86;
+  const publicationConfidence = isRecorded ? RECORDED_DECISION_PUBLICATION_CONFIDENCE : 0.8;
+  const extraTags = isRecorded
+    ? ["decision-record", RECORDED_CLAIM_TAG, AI_RECORDED_TAG]
+    : ["decision-record"];
 
   for (const decision of noteContent.note.decisions) {
     const located = locateLineByMatchers(noteContent.content, [{ text: decision }], ["decision-record"]);
-    const evidence = createEvidenceEntry(noteContent.snapshot, located, "heuristic", 0.86, "knowledge_decision");
+    const evidence = createEvidenceEntry(noteContent.snapshot, located, "heuristic", supportScore, "knowledge_decision");
     const claimId = makeHashedCodemapId("claim", ["knowledge_decision", noteContent.note.file, decision]);
     const previous = previousClaimsById.get(claimId);
     claims.push({
@@ -221,9 +232,9 @@ function buildDecisionClaims(
         subject: decision,
         text: `Decision recorded in ${noteContent.note.file}: ${decision}`,
         status: "candidate",
-        supportScore: 0.86,
-        publicationConfidence: 0.8,
-        tags: toKnowledgeTags(noteContent.note, "knowledge_decision", ["decision-record"]),
+        supportScore,
+        publicationConfidence,
+        tags: toKnowledgeTags(noteContent.note, "knowledge_decision", extraTags),
         firstSeenAt: previous?.firstSeenAt,
       }),
     });

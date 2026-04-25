@@ -19,6 +19,7 @@ import { readWikiArticle, listWikiArticles, lintWiki } from "./generators/wiki.j
 import type { ScanResult } from "./types.js";
 import { publishCodeCodemap } from "./codemap/publish/code-pipeline.js";
 import { publishKnowledgeCodemap } from "./codemap/publish/knowledge-pipeline.js";
+import { recordDecision } from "./codemap/notes/record-decision.js";
 import {
   formatCodemapClaim,
   formatCodemapClaimHistory,
@@ -783,6 +784,39 @@ async function toolCodemapGetPublishStatus(args: any): Promise<string> {
   return formatCodemapPublishStatus(status);
 }
 
+async function toolCodemapRecordDecision(args: any): Promise<string> {
+  const subject = typeof args?.subject === "string" ? args.subject : "";
+  const decision = typeof args?.decision === "string" ? args.decision : "";
+  if (!subject.trim() || !decision.trim()) {
+    return "Both `subject` and `decision` are required and must not be empty.";
+  }
+
+  const repoRoot = resolve(typeof args?.directory === "string" && args.directory.trim()
+    ? args.directory
+    : process.cwd());
+  const result = await recordDecision({
+    repoRoot,
+    subject,
+    decision,
+    rationale: typeof args?.rationale === "string" ? args.rationale : undefined,
+    relatedSourcePaths: Array.isArray(args?.related_source_paths)
+      ? args.related_source_paths.filter((value: unknown): value is string => typeof value === "string")
+      : undefined,
+    supersedes: Array.isArray(args?.supersedes)
+      ? args.supersedes.filter((value: unknown): value is string => typeof value === "string")
+      : undefined,
+  });
+
+  return [
+    "Recorded decision note.",
+    `- subject: ${subject}`,
+    `- file: ${result.relativePath}`,
+    `- absolute path: ${result.absolutePath}`,
+    `- recorded at: ${result.recordedAt}`,
+    "Run `codesight --codemap` (or wait for the next watch/hook publish) to surface this as a knowledge_decision claim with the `recorded` tag and lower default confidence.",
+  ].join("\n");
+}
+
 // =================== TOOL DEFINITIONS ===================
 
 const TOOLS = [
@@ -957,6 +991,41 @@ const TOOLS = [
       },
     },
     handler: toolCodemapSearchClaims,
+  },
+  {
+    name: "codemap_record_decision",
+    description:
+      "Capture an in-conversation decision into the project's notes/decisions/recorded/ directory. Use this whenever the user makes a concrete decision (e.g., picking a tool, library, architecture, scope cut). The recorded note becomes a knowledge_decision claim on the next CodeMap publish, tagged `recorded` with lower default confidence so a human can review and promote it. Returns the absolute path so you can navigate to and edit the file if the recording was wrong.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        directory: { type: "string", description: "Repo root (defaults to cwd)" },
+        subject: {
+          type: "string",
+          description: "Short label for the decision (e.g., 'Switch payments from Stripe to Polar'). Required.",
+        },
+        decision: {
+          type: "string",
+          description: "The decision text, near-verbatim from the conversation. Required.",
+        },
+        rationale: {
+          type: "string",
+          description: "Optional reasoning behind the decision.",
+        },
+        related_source_paths: {
+          type: "array",
+          description: "Optional list of source files or directories the decision affects.",
+          items: { type: "string" },
+        },
+        supersedes: {
+          type: "array",
+          description: "Optional list of prior decision subjects this decision replaces.",
+          items: { type: "string" },
+        },
+      },
+      required: ["subject", "decision"],
+    },
+    handler: toolCodemapRecordDecision,
   },
   {
     name: "codemap_search_knowledge",

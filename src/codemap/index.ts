@@ -9,3 +9,4 @@ export * from "./publish/index.js";
 export * from "./mcp/index.js";
 export * from "./runtime/index.js";
 export * from "./migration/index.js";
+export * from "./notes/index.js";
