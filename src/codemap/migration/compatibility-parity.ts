@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { makeHashedCodemapId } from "../model/ids.js";
 import { CODEMAP_FILES } from "../model/layout.js";
-import type { PublishIncident, RenderedView } from "../model/types.js";
+import type { PublishIncident, PublishIncidentSource, RenderedView } from "../model/types.js";
 
 export type CompatibilityParityStatus =
   | "match"
@@ -224,14 +224,16 @@ function createIncident(
   article: CompatibilityParityArticle,
   createdAt: string,
   severity: PublishIncident["severity"],
-  message: string
+  source: PublishIncidentSource,
+  message: string,
 ): PublishIncident {
   return {
-    id: makeHashedCodemapId("incident", [article.article, article.status, createdAt, message]),
+    id: makeHashedCodemapId("incident", [source, article.article, article.status, message]),
     createdAt,
     severity,
     message,
     claimIds: [],
+    source,
   };
 }
 
@@ -244,6 +246,7 @@ function buildIncidents(articles: CompatibilityParityArticle[], createdAt: strin
         article,
         createdAt,
         "medium",
+        "compatibility-missing",
         `Legacy wiki article ${article.article} has no CodeMap compatibility counterpart yet.`,
       ));
     } else if (article.status === "drift") {
@@ -252,6 +255,7 @@ function buildIncidents(articles: CompatibilityParityArticle[], createdAt: strin
         article,
         createdAt,
         "low",
+        "compatibility-drift",
         `Compatibility wiki article ${article.article} diverges from the legacy wiki baseline (similarity ${similarity}).`,
       ));
     }

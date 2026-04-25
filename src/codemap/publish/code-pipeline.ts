@@ -52,6 +52,10 @@ import {
 } from "../runtime/index.js";
 import { writeCodemapPublishPlan } from "./plans.js";
 import {
+  buildClaimHealthIncidents,
+  DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
+} from "./claim-health-incidents.js";
+import {
   ensureCodemapLayout,
   readJsonFile,
   resolveCodemapPath,
@@ -739,7 +743,16 @@ export async function publishCodeCodemap(
   });
   const compatibilityParity = await compareCompatibilityWiki(repoRoot, compatibilityViews, generatedAt);
   await writeJsonFile(resolveCodemapPath(repoRoot, CODEMAP_FILES.compatibilityParity), compatibilityParity.report);
-  await writeNdjsonFile(resolveCodemapPath(repoRoot, CODEMAP_FILES.incidentsNdjson), compatibilityParity.incidents);
+  const claimHealthIncidents = buildClaimHealthIncidents({
+    claims,
+    conflicts,
+    verification,
+    generatedAt,
+    criticalClaimTypes: DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
+  });
+  const incidents = [...compatibilityParity.incidents, ...claimHealthIncidents]
+    .sort((left, right) => left.id.localeCompare(right.id));
+  await writeNdjsonFile(resolveCodemapPath(repoRoot, CODEMAP_FILES.incidentsNdjson), incidents);
   await writeViews(repoRoot, [...renderedViews, ...compatibilityViews]);
 
   await writeCodemapRefreshPlan(repoRoot, refreshPlan);
@@ -761,7 +774,7 @@ export async function publishCodeCodemap(
     evidence: evidence.length,
     verificationRecords: verification.length,
     conflicts: conflicts.length,
-    incidents: compatibilityParity.incidents.length,
+    incidents: incidents.length,
     views: renderedViews.map((view) => view.path),
     compatibilityViews: compatibilityViews.map((view) => view.path),
     compatibilityParity: {
@@ -790,7 +803,7 @@ export async function publishCodeCodemap(
     views: renderedViews,
     compatibilityViews,
     compatibilityParity: compatibilityParity.report,
-    incidents: compatibilityParity.incidents,
+    incidents,
     refreshPlan,
     scanState,
     historyArchiveManifest: historyStorage.manifest,

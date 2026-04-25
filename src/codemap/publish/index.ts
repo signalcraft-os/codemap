@@ -14,3 +14,4 @@ export * from "./plans.js";
 export * from "./routes-pipeline.js";
 export * from "./code-pipeline.js";
 export * from "./knowledge-pipeline.js";
+export * from "./claim-health-incidents.js";

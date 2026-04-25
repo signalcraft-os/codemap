@@ -307,6 +307,8 @@ export interface SnapshotArchiveSegment {
   state: HistoryArchiveSegmentState;
   compression: HistoryArchiveCompression;
   bundlePath?: string;
+  metadataPath?: string;
+  contentPath?: string;
 }
 
 export interface SnapshotArchiveManifest {
@@ -335,7 +337,9 @@ export interface SnapshotArchiveIndexEntry {
   sizeBytes: number;
   bytes: number;
   segmentId: string;
-  bundlePath: string;
+  bundlePath?: string;
+  metadataPath?: string;
+  contentPath?: string;
 }
 
 export interface SnapshotArchiveIndex {
@@ -427,12 +431,24 @@ export interface RenderedView {
   claimIds: string[];
 }
 
+export type PublishIncidentSource =
+  | "conflict-high"
+  | "conflict-medium"
+  | "claim-stale-critical"
+  | "claim-stale"
+  | "claim-conflicting"
+  | "claim-quarantined"
+  | "compatibility-missing"
+  | "compatibility-drift";
+
 export interface PublishIncident {
   id: string;
   createdAt: string;
   severity: ConflictSeverity;
   message: string;
   claimIds: string[];
+  source: PublishIncidentSource;
+  sourceRecordId?: string;
 }
 
 export interface PublishRunRecord {
