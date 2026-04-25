@@ -501,7 +501,9 @@ export async function publishKnowledgeCodemap(
   const compatibilityParity = await compareCompatibilityKnowledge(repoRoot, compatibilityViews, generatedAt);
   await writeJsonFile(resolveCodemapPath(repoRoot, CODEMAP_FILES.compatibilityKnowledgeParity), compatibilityParity.report);
   const claimHealthIncidents = buildClaimHealthIncidents({
-    claims: rawState.claims,
+    // Scope to knowledge claims so code-domain conflicts preserved through the
+    // shared canonical store don't leak into knowledge-incidents.ndjson.
+    claims: finalKnowledgeClaims,
     conflicts: rawState.conflicts,
     verification: rawState.verification,
     generatedAt,

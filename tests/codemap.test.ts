@@ -3724,3 +3724,241 @@ test("publishKnowledgeCodemap surfaces AI-recorded decisions with the recorded t
     await rm(repoRoot, { recursive: true, force: true });
   }
 });
+
+test("publishKnowledgeCodemap ignores decision-shaped phrases inside fenced code, blockquotes, and Example/Bad/Good sections", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-decision-extract-hygiene-"));
+  try {
+    await writeFile(join(repoRoot, "package.json"), JSON.stringify({
+      name: "codemap-decision-extract-hygiene",
+    }, null, 2), "utf-8");
+
+    const docsDir = join(repoRoot, "docs");
+    await mkdir(docsDir, { recursive: true });
+    const realDecisionPath = join(docsDir, "real-decision.md");
+    const teachingDocPath = join(docsDir, "teaching.md");
+    const readmePath = join(repoRoot, "README.md");
+
+    await writeFile(
+      realDecisionPath,
+      [
+        "# Payments ADR",
+        "",
+        "## Decision",
+        "",
+        "We decided to use Polar for the initial marketplace launch.",
+        "",
+        "## Context",
+        "",
+        "Real prose so this file extracts a real decision.",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+
+    await writeFile(
+      teachingDocPath,
+      [
+        "# Knowledge mode hardening",
+        "",
+        "Some normative prose without any decision verbs.",
+        "",
+        "## Example",
+        "",
+        "Bad:",
+        "",
+        "> Team decided to use SQLite globally.",
+        "",
+        "Good:",
+        "",
+        "- claim A: going with Postgres over SQLite for ACID guarantees.",
+        "",
+        "## After example",
+        "",
+        "More prose.",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+
+    await writeFile(
+      readmePath,
+      [
+        "# Project",
+        "",
+        "Sample KNOWLEDGE.md output:",
+        "",
+        "```markdown",
+        "## Key Decisions",
+        "- [2026-03-20] Going with Redis instead of Memcached for caching",
+        "- [2026-03-15] Decided to use ClickHouse for analytics warehouse",
+        "```",
+        "",
+        "End of demo.",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+
+    await publishKnowledgeCodemap(repoRoot, [realDecisionPath, teachingDocPath, readmePath]);
+
+    const decisionClaims = parseNdjson<{ type: string; subject: string }>(
+      await readFile(join(repoRoot, ".codemap", "claims", "claims.ndjson"), "utf-8"),
+    ).filter((claim) => claim.type === "knowledge_decision");
+
+    const subjects = decisionClaims.map((claim) => claim.subject);
+    assert.ok(
+      subjects.some((s) => /Polar/i.test(s)),
+      `expected real ADR decision to be extracted; got ${JSON.stringify(subjects)}`,
+    );
+    for (const banned of ["SQLite", "Postgres", "Redis", "Memcached", "ClickHouse"]) {
+      assert.ok(
+        !subjects.some((s) => new RegExp(banned, "i").test(s)),
+        `expected demonstration phrase '${banned}' to NOT become a decision; got ${JSON.stringify(subjects)}`,
+      );
+    }
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("buildClaimHealthIncidents skips conflict edges whose endpoints are not in the caller's claim set", () => {
+  const knowledgeClaim = {
+    id: "claim:knowledge-decision-x",
+    type: "knowledge_decision" as const,
+    subject: "Use Polar for payments",
+    text: "decision",
+    sourceSnapshotIds: ["snapshot:n"],
+    evidenceSpanIds: ["evidence:n"],
+    status: "verified" as const,
+    supportScore: 0.9,
+    publicationConfidence: 0.9,
+    firstSeenAt: "2026-04-25T00:00:00.000Z",
+    tags: [],
+  };
+  const codeMiddlewareConflict = {
+    id: "conflict:code-middleware",
+    claimA: "claim:code-mw-a",
+    claimB: "claim:code-mw-b",
+    relation: "conflicts" as const,
+    severity: "medium" as const,
+    createdAt: "2026-04-25T00:00:00.000Z",
+    rationale: "two code middleware claims disagree",
+  };
+
+  const incidents = buildClaimHealthIncidents({
+    claims: [knowledgeClaim],
+    conflicts: [codeMiddlewareConflict],
+    verification: [],
+    generatedAt: "2026-04-25T00:00:00.000Z",
+    criticalClaimTypes: new Set(["knowledge_decision"]),
+  });
+
+  assert.equal(
+    incidents.filter((incident) => incident.source.startsWith("conflict-")).length,
+    0,
+    "knowledge pipeline must not emit incidents for code-only conflict edges",
+  );
+});
+
+test("CLI --codemap without --mode runs both code and knowledge pipelines so the AI adoption recipe finds both views", async (t) => {
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const { fileURLToPath } = await import("node:url");
+  const { dirname, resolve: pathResolve } = await import("node:path");
+  const exec = promisify(execFile);
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  const entrypoint = pathResolve(__dirname, "..", "dist", "index.js");
+
+  async function runCli(args: string[], cwd: string) {
+    return await exec(process.execPath, [entrypoint, ...args], {
+      cwd,
+      env: { ...process.env, CI: "1" },
+      timeout: 30_000,
+    });
+  }
+
+  async function fileExists(p: string): Promise<boolean> {
+    try {
+      const s = await import("node:fs/promises").then((m) => m.stat(p));
+      return s.isFile();
+    } catch {
+      return false;
+    }
+  }
+
+  const sharedFixture = async (label: string) => {
+    const repoRoot = await mkdtemp(join(tmpdir(), `codemap-cli-${label}-`));
+    await writeFile(
+      join(repoRoot, "package.json"),
+      JSON.stringify({ name: `cli-${label}`, dependencies: { express: "^4.0.0" } }, null, 2),
+      "utf-8",
+    );
+    await mkdir(join(repoRoot, "src"), { recursive: true });
+    await writeFile(
+      join(repoRoot, "src", "routes.ts"),
+      [
+        'import { Router } from "express";',
+        "const router = Router();",
+        'router.get("/users", (_req, res) => res.json([]));',
+        "export default router;",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+    await writeFile(
+      join(repoRoot, "decision.md"),
+      [
+        "# ADR-001 Database",
+        "",
+        "## Decision",
+        "",
+        "We decided to use SQLite for the prototype.",
+        "",
+      ].join("\n"),
+      "utf-8",
+    );
+    return repoRoot;
+  };
+
+  // The discriminator is whether the knowledge pipeline ran. Code pipeline
+  // always runs; .codemap/views/index.md is enough to confirm the call landed.
+  await t.test("default --codemap auto-runs knowledge so views/knowledge/overview.md exists", async () => {
+    const repoRoot = await sharedFixture("auto");
+    try {
+      await runCli(["--codemap"], repoRoot);
+      assert.ok(
+        await fileExists(join(repoRoot, ".codemap", "views", "index.md")),
+        "expected code pipeline output (.codemap/views/index.md)",
+      );
+      assert.ok(
+        await fileExists(join(repoRoot, ".codemap", "views", "knowledge", "overview.md")),
+        "expected knowledge overview view from auto-run",
+      );
+      assert.ok(
+        await fileExists(join(repoRoot, ".codemap", "publish", "knowledge-incidents.ndjson")),
+        "expected knowledge incidents stream from auto-run",
+      );
+    } finally {
+      await rm(repoRoot, { recursive: true, force: true });
+    }
+  });
+
+  await t.test("--mode code --codemap is the escape hatch and skips the knowledge auto-run", async () => {
+    const repoRoot = await sharedFixture("escape");
+    try {
+      await runCli(["--mode", "code", "--codemap"], repoRoot);
+      assert.ok(
+        await fileExists(join(repoRoot, ".codemap", "views", "index.md")),
+        "expected code pipeline output in --mode code path",
+      );
+      assert.equal(
+        await fileExists(join(repoRoot, ".codemap", "views", "knowledge", "overview.md")),
+        false,
+        "knowledge overview must NOT be generated when --mode code is explicit",
+      );
+    } finally {
+      await rm(repoRoot, { recursive: true, force: true });
+    }
+  });
+});

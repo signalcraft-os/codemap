@@ -30,7 +30,7 @@ function printHelp() {
     -o, --output <dir>       Output directory (default: .codesight)
     -d, --depth <n>          Max directory depth (default: 10)
     --wiki                   Generate wiki knowledge base (.codesight/wiki/)
-    --codemap                Generate experimental CodeMap shadow output (.codemap/, code claims or canonical knowledge claims in knowledge mode)
+    --codemap                Generate CodeMap shadow output (.codemap/). Without --mode runs both code and knowledge pipelines so the AI adoption recipe finds both views. Use --mode code or --mode knowledge to scope to one.
     --init                   Generate AI config files (CLAUDE.md, .cursorrules, etc.)
     --watch                  Re-scan on file changes (use with --wiki/--codemap to refresh derived outputs)
     --hook                   Install git pre-commit hook (dual-write with --codemap)
@@ -406,6 +406,7 @@ async function main() {
   let maxTokens = 0;
   let doSince = "";
   let mode = "code";
+  let modeExplicit = false;
   let doRefresh = false;
   let refreshPackage = "";
   let codemapTrigger: "cli" | "hook" = "cli";
@@ -452,6 +453,7 @@ async function main() {
       doSince = args[++i];
     } else if (arg === "--mode" && args[i + 1]) {
       mode = args[++i];
+      modeExplicit = true;
     } else if (arg === "--refresh") {
       doRefresh = true;
       if (args[i + 1] && !args[i + 1].startsWith("-")) {
@@ -660,6 +662,17 @@ async function main() {
     console.log(`  Refresh:  .codemap/cache/refresh-plan.json`);
     console.log(`  State:    .codemap/cache/scan-state.json`);
     console.log("");
+  }
+
+  // Auto-run knowledge pipeline alongside code so the AI adoption template's
+  // step 2 (codemap_get_knowledge_overview) and step 3 (knowledge/overview.md)
+  // are populated on a single --codemap call. Skip when the user explicitly
+  // chose --mode (their override wins) or in watch mode (handled separately).
+  if (doCodemap && !modeExplicit && !doWatch) {
+    await runKnowledgeScan(root, outputDirName, maxDepth, doCodemap, config, {
+      trigger: codemapTrigger,
+      quiet: true,
+    });
   }
 
   // Generate AI config files

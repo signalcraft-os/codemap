@@ -135,6 +135,12 @@ export function buildClaimHealthIncidents(input: ClaimHealthIncidentsInput): Pub
   const incidents: PublishIncident[] = [];
 
   for (const edge of input.conflicts) {
+    // Scope incidents to the caller's claim set: only emit when both endpoints
+    // are domain claims. Prevents the knowledge pipeline from re-emitting code
+    // conflict edges (and vice versa) into the wrong incidents stream.
+    if (!claimsById.has(edge.claimA) || !claimsById.has(edge.claimB)) {
+      continue;
+    }
     const incident = conflictIncident(edge, claimsById, input.generatedAt);
     if (incident) {
       incidents.push(incident);

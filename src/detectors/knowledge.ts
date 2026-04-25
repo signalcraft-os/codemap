@@ -119,7 +119,11 @@ function extractDecisions(content: string): string[] {
     if (firstLine) return [cleanWikilinks(firstLine.replace(/^[-*>]\s*/, "").trim())];
   }
 
-  // Pattern-based extraction
+  // Pattern-based extraction. Strip demonstration markup so READMEs and docs that
+  // *show* what a decision looks like don't emit phantom decisions for content
+  // inside ``` fences, > blockquotes, or ## Example / ## Bad / ## Good sections.
+  const prose = stripExampleSections(stripBlockquoteLines(stripCodeBlocks(content)));
+
   // Phrases that look like decisions but are meta-commentary about ADR process, not actual decisions
   const DECISION_NOISE = /^(reject|accept|propose|update|supersede|deprecate)\s+the\s+adr/i;
 
@@ -133,7 +137,7 @@ function extractDecisions(content: string): string[] {
 
   for (const pattern of patterns) {
     let m: RegExpExecArray | null;
-    while ((m = pattern.exec(content)) !== null) {
+    while ((m = pattern.exec(prose)) !== null) {
       const d = cleanWikilinks(m[1].trim().replace(/[*_`]/g, ""));
       if (d.length >= 10 && d.length <= 160 && !DECISION_NOISE.test(d)) decisions.push(d);
     }
@@ -154,6 +158,42 @@ function stripCodeBlocks(content: string): string {
   // Remove inline code spans (`...`)
   stripped = stripped.replace(/`[^`\n]+`/g, "``");
   return stripped;
+}
+
+function stripBlockquoteLines(content: string): string {
+  return content
+    .split("\n")
+    .map((line) => (/^\s{0,3}>/.test(line) ? "" : line))
+    .join("\n");
+}
+
+const EXAMPLE_HEADING = /^(?:examples?|bad|good|do(?:n['’]t)?|don['’]t|anti[-\s]?pattern|counter[-\s]?example)\b/i;
+
+function stripExampleSections(content: string): string {
+  // Drop content under ATX headings whose title starts with Example/Bad/Good/Don't/etc.
+  // until the next heading at <= the same level. Prevents teaching prose inside
+  // architecture docs from being read as real decisions.
+  const lines = content.split("\n");
+  const out: string[] = [];
+  let dropLevel = 0;
+  for (const line of lines) {
+    const headingMatch = line.match(/^(#{1,6})\s+(.+?)\s*$/);
+    if (headingMatch) {
+      const level = headingMatch[1].length;
+      const title = headingMatch[2].trim();
+      if (EXAMPLE_HEADING.test(title)) {
+        dropLevel = level;
+        continue;
+      }
+      if (dropLevel > 0 && level <= dropLevel) {
+        dropLevel = 0;
+      }
+    }
+    if (dropLevel === 0) {
+      out.push(line);
+    }
+  }
+  return out.join("\n");
 }
 
 // ─── Open Question Extraction ─────────────────────────────────────────────────

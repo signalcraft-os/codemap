@@ -12,13 +12,15 @@ CodeMap ships inside the existing `codesight` CLI under the `--codemap` flag. It
 npx codesight --codemap
 ```
 
+By default this runs **both** the code and knowledge pipelines so the AI adoption recipe in section 4 finds both views on a single call. Pass `--mode code --codemap` or `--mode knowledge --codemap` to scope to one.
+
 This produces:
 - `.codemap/snapshots/` — immutable hash-anchored snapshots of source + notes
 - `.codemap/claims/claims.ndjson` — verified claims with evidence references
 - `.codemap/views/` — rendered markdown views derived from claims (read these, don't read the raw .ndjson)
 - `.codemap/views/knowledge/overview.md` — decisions, open questions, themes, people
 - `.codemap/compatibility/` — drop-in replacements for the legacy `.codesight/wiki/` and `KNOWLEDGE.md` consumers
-- `.codemap/publish/incidents.ndjson` — flagged drift (see section 3)
+- `.codemap/publish/incidents.ndjson` and `.codemap/publish/knowledge-incidents.ndjson` — flagged drift (see section 3)
 - `.codemap/history/` — publish-run ledger, claim-state history, archive policy state
 
 Add `.codemap/cache/` to `.gitignore`. Commit the rest if you want claim history to be diffable in PRs; ignore the whole directory if you want CodeMap as a per-developer tool only.
