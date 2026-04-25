@@ -27,7 +27,7 @@ Implemented and green:
 Latest verification (2026-04-25):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `121` passing, `0` failing
+- result: `123` passing, `0` failing
 
 ## Documentation
 
@@ -38,6 +38,11 @@ Latest verification (2026-04-25):
 ## Recent Cumulative Changes (2026-04-23 → 2026-04-25)
 
 Grouped by phase, newest first.
+
+### Inferred provenance survives status flips (2026-04-25)
+- `knowledge.ts toSummaryLine` and `compatibility-wiki.ts toStatusBadge` now append a defensive `[inferred]` label when `tags.includes("inferred") && status !== "inferred"`, mirroring what `code.ts` and `routes.ts` already did ([src/codemap/render/views/knowledge.ts](../src/codemap/render/views/knowledge.ts), [src/codemap/render/views/compatibility-wiki.ts](../src/codemap/render/views/compatibility-wiki.ts))
+- Closes the invariant #5 audit. Failure case: a regex-extracted decision/route that goes stale used to render as `[stale]` only — readers couldn't distinguish a formerly-rock-solid AST claim from a formerly-low-confidence regex claim. Now both render `[stale] [inferred]` so triage gets the right priority signal.
+- The compatibility wiki single-point fix in `toStatusBadge` propagates through routes, models, relations, components, hotspots, env, middleware, and library renderers since they all funnel through that helper.
 
 ### Conflict surfacing in MCP responses (2026-04-25)
 - `codemap_search_claims` / `codemap_search_knowledge` now expose `conflictCount` per claim summary; the search formatter prints `| conflicts: N` so AI sessions see conflict membership at search time without a per-claim drill-in ([src/codemap/mcp/index.ts](../src/codemap/mcp/index.ts))
@@ -77,11 +82,12 @@ Grouped by phase, newest first.
 
 In rough priority order, with short rationale:
 
-1. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
-2. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
-3. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
-4. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back this session as scope creep; revisit if AI sessions report missing the signal in those tools.
-5. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
+1. **Dogfood CodeMap on this repository** — quickstart docs and the conflict-surfacing + inferred-provenance work are now in. Run `node dist/index.js --codemap` from the repo root and inspect `.codemap/views/*` and the incident streams. This is the first chance to see what CodeMap says about itself; expect to find at least one real gap or ergonomic problem worth fixing.
+2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of the recording tool, but defer until the decision tool is proven in real use. Don't build symmetry for its own sake.
+3. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+4. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+5. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back this session as scope creep; revisit if AI sessions report missing the signal in those tools.
+6. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
 
 ## Scheduled Follow-Ups
 
