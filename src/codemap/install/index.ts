@@ -6,22 +6,47 @@ import { homedir } from "node:os";
 export const SECTION_BEGIN_MARKER = "<!-- codemap-claude-md-section-begin -->";
 export const SECTION_END_MARKER = "<!-- codemap-claude-md-section-end -->";
 
-export type InstallClaudeMdAction = "created" | "appended" | "updated" | "skipped";
+export type InstallPromptAction = "created" | "appended" | "updated" | "skipped";
 
-export interface InstallClaudeMdOptions {
+export interface InstallPromptOptions {
   targetPath?: string;
   sectionText?: string;
   force?: boolean;
 }
 
-export interface InstallClaudeMdResult {
+export interface InstallPromptResult {
   targetPath: string;
-  action: InstallClaudeMdAction;
+  action: InstallPromptAction;
 }
 
-export async function installClaudeMdSection(
-  options: InstallClaudeMdOptions = {},
-): Promise<InstallClaudeMdResult> {
+export interface PromptTarget {
+  name: string;
+  path: string;
+}
+
+export function defaultClaudeMdPath(): string {
+  return join(homedir(), ".claude", "CLAUDE.md");
+}
+
+export function defaultCodexAgentsMdPath(): string {
+  return join(homedir(), ".codex", "AGENTS.md");
+}
+
+export function defaultGeminiMdPath(): string {
+  return join(homedir(), ".gemini", "GEMINI.md");
+}
+
+export function defaultPromptTargets(): PromptTarget[] {
+  return [
+    { name: "Claude Code", path: defaultClaudeMdPath() },
+    { name: "OpenAI Codex CLI", path: defaultCodexAgentsMdPath() },
+    { name: "Gemini CLI", path: defaultGeminiMdPath() },
+  ];
+}
+
+export async function installPromptSection(
+  options: InstallPromptOptions = {},
+): Promise<InstallPromptResult> {
   const targetPath = options.targetPath ?? defaultClaudeMdPath();
   const sectionText = options.sectionText ?? await readBundledSection();
   const trimmedSection = sectionText.replace(/^\n+/, "").replace(/\n+$/, "");
@@ -65,10 +90,6 @@ export async function installClaudeMdSection(
   const separator = existing.endsWith("\n") ? "\n" : "\n\n";
   await writeFile(targetPath, `${existing}${separator}${trimmedSection}\n`);
   return { targetPath, action: "appended" };
-}
-
-export function defaultClaudeMdPath(): string {
-  return join(homedir(), ".claude", "CLAUDE.md");
 }
 
 async function readBundledSection(): Promise<string> {

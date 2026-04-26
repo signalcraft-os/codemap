@@ -19,8 +19,12 @@ import {
   collectImpactedWorkspaces,
   computeProjectHash,
   countRecordedDecisions,
+  defaultClaudeMdPath,
+  defaultCodexAgentsMdPath,
+  defaultGeminiMdPath,
+  defaultPromptTargets,
   formatSlackPayload,
-  installClaudeMdSection,
+  installPromptSection,
   postTelemetry,
   SECTION_BEGIN_MARKER,
   SECTION_END_MARKER,
@@ -4249,13 +4253,13 @@ test("countRecordedDecisions counts only .md files in .codemap/notes/decisions/r
   }
 });
 
-test("installClaudeMdSection creates ~/.claude/CLAUDE.md when missing", async () => {
+test("installPromptSection creates ~/.claude/CLAUDE.md when missing", async () => {
   const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
   try {
     const targetPath = join(homeDir, "CLAUDE.md");
     const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nfake body\n${SECTION_END_MARKER}\n`;
 
-    const result = await installClaudeMdSection({ targetPath, sectionText });
+    const result = await installPromptSection({ targetPath, sectionText });
     assert.equal(result.action, "created");
     assert.equal(result.targetPath, targetPath);
 
@@ -4268,7 +4272,7 @@ test("installClaudeMdSection creates ~/.claude/CLAUDE.md when missing", async ()
   }
 });
 
-test("installClaudeMdSection appends to an existing CLAUDE.md without disturbing prior content", async () => {
+test("installPromptSection appends to an existing CLAUDE.md without disturbing prior content", async () => {
   const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
   try {
     const targetPath = join(homeDir, "CLAUDE.md");
@@ -4276,7 +4280,7 @@ test("installClaudeMdSection appends to an existing CLAUDE.md without disturbing
     await writeFile(targetPath, original);
 
     const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nfake body\n${SECTION_END_MARKER}\n`;
-    const result = await installClaudeMdSection({ targetPath, sectionText });
+    const result = await installPromptSection({ targetPath, sectionText });
     assert.equal(result.action, "appended");
 
     const written = await readFile(targetPath, "utf-8");
@@ -4289,16 +4293,16 @@ test("installClaudeMdSection appends to an existing CLAUDE.md without disturbing
   }
 });
 
-test("installClaudeMdSection is idempotent: a second run with the section already present is a skip", async () => {
+test("installPromptSection is idempotent: a second run with the section already present is a skip", async () => {
   const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
   try {
     const targetPath = join(homeDir, "CLAUDE.md");
     const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\noriginal body\n${SECTION_END_MARKER}\n`;
 
-    await installClaudeMdSection({ targetPath, sectionText });
+    await installPromptSection({ targetPath, sectionText });
     const firstWrite = await readFile(targetPath, "utf-8");
 
-    const second = await installClaudeMdSection({ targetPath, sectionText });
+    const second = await installPromptSection({ targetPath, sectionText });
     assert.equal(second.action, "skipped", "second run without --force must be a no-op skip");
 
     const secondWrite = await readFile(targetPath, "utf-8");
@@ -4308,7 +4312,7 @@ test("installClaudeMdSection is idempotent: a second run with the section alread
   }
 });
 
-test("installClaudeMdSection with force replaces the section between markers without touching surrounding content", async () => {
+test("installPromptSection with force replaces the section between markers without touching surrounding content", async () => {
   const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
   try {
     const targetPath = join(homeDir, "CLAUDE.md");
@@ -4318,7 +4322,7 @@ test("installClaudeMdSection with force replaces the section between markers wit
     await writeFile(targetPath, `${before}\n${oldSection}${after}`);
 
     const newSection = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nnew body\n${SECTION_END_MARKER}\n`;
-    const result = await installClaudeMdSection({ targetPath, sectionText: newSection, force: true });
+    const result = await installPromptSection({ targetPath, sectionText: newSection, force: true });
     assert.equal(result.action, "updated");
 
     const written = await readFile(targetPath, "utf-8");
@@ -4328,6 +4332,53 @@ test("installClaudeMdSection with force replaces the section between markers wit
     assert.ok(written.includes("User-authored content below the codemap section."), "user prose below must be preserved");
     assert.ok(written.includes("new body"), "new section content must be present");
     assert.equal(written.includes("old body that should be replaced"), false, "old section content must be gone");
+  } finally {
+    await rm(homeDir, { recursive: true, force: true });
+  }
+});
+
+test("defaultPromptTargets returns the three known global LLM config locations", () => {
+  const targets = defaultPromptTargets();
+  assert.equal(targets.length, 3, "expected three known LLM globals");
+  const paths = targets.map((target) => target.path);
+  const names = targets.map((target) => target.name);
+
+  assert.ok(paths.includes(defaultClaudeMdPath()), "Claude global must be present");
+  assert.ok(paths.includes(defaultCodexAgentsMdPath()), "Codex global must be present");
+  assert.ok(paths.includes(defaultGeminiMdPath()), "Gemini global must be present");
+
+  assert.ok(names.includes("Claude Code"));
+  assert.ok(names.includes("OpenAI Codex CLI"));
+  assert.ok(names.includes("Gemini CLI"));
+
+  for (const target of targets) {
+    assert.ok(target.path.endsWith(".md"), `${target.name} target should point at a .md file`);
+  }
+});
+
+test("installPromptSection writes identical content to multiple LLM-global target paths", async () => {
+  const homeDir = await mkdtemp(join(tmpdir(), "codemap-multi-"));
+  try {
+    const claudePath = join(homeDir, ".claude", "CLAUDE.md");
+    const codexPath = join(homeDir, ".codex", "AGENTS.md");
+    const geminiPath = join(homeDir, ".gemini", "GEMINI.md");
+
+    const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nshared body\n${SECTION_END_MARKER}\n`;
+
+    for (const targetPath of [claudePath, codexPath, geminiPath]) {
+      const result = await installPromptSection({ targetPath, sectionText });
+      assert.equal(result.action, "created", `${targetPath} should be created on first run`);
+    }
+
+    const claudeContent = await readFile(claudePath, "utf-8");
+    const codexContent = await readFile(codexPath, "utf-8");
+    const geminiContent = await readFile(geminiPath, "utf-8");
+
+    assert.equal(claudeContent, codexContent, "all three targets must end up with identical content");
+    assert.equal(codexContent, geminiContent, "all three targets must end up with identical content");
+    assert.ok(claudeContent.includes("shared body"));
+    assert.ok(claudeContent.includes(SECTION_BEGIN_MARKER));
+    assert.ok(claudeContent.includes(SECTION_END_MARKER));
   } finally {
     await rm(homeDir, { recursive: true, force: true });
   }
