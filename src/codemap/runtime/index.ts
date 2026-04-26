@@ -758,3 +758,58 @@ export function summarizeChangedFiles(changedFiles: string[]): string {
   }
   return `${normalized.length} files`;
 }
+
+export const CODE_WATCH_EXTENSIONS: ReadonlySet<string> = new Set([
+  ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+  ".py", ".go", ".vue", ".svelte", ".rb", ".ex", ".exs",
+  ".java", ".kt", ".rs", ".php",
+  ".json", ".yaml", ".yml", ".toml", ".env",
+  ".prisma", ".graphql", ".gql",
+]);
+
+export const KNOWLEDGE_WATCH_EXTENSIONS: ReadonlySet<string> = new Set([".md", ".mdx"]);
+
+export type WatchChangeKind = "code" | "knowledge" | "ignored";
+
+export interface ClassifyWatchChangeOptions {
+  ignoreDirs: ReadonlySet<string>;
+  pipelines: { code: boolean; knowledge: boolean };
+}
+
+export interface WatchChangeClassification {
+  kind: WatchChangeKind;
+  reason:
+    | "empty-filename"
+    | "ignored-dir"
+    | "knowledge-extension"
+    | "code-extension"
+    | "knowledge-disabled"
+    | "code-disabled"
+    | "unsupported-extension";
+}
+
+export function classifyWatchChange(
+  filename: string | null | undefined,
+  options: ClassifyWatchChangeOptions,
+): WatchChangeClassification {
+  if (!filename) return { kind: "ignored", reason: "empty-filename" };
+  const normalized = filename.replace(/\\/g, "/");
+  if (normalized.length === 0) return { kind: "ignored", reason: "empty-filename" };
+  const parts = normalized.split("/");
+  if (parts.some((part) => options.ignoreDirs.has(part))) {
+    return { kind: "ignored", reason: "ignored-dir" };
+  }
+  const lastSlash = normalized.lastIndexOf("/");
+  const base = lastSlash === -1 ? normalized : normalized.slice(lastSlash + 1);
+  const dotIndex = base.lastIndexOf(".");
+  const ext = dotIndex > 0 ? base.slice(dotIndex).toLowerCase() : "";
+  if (KNOWLEDGE_WATCH_EXTENSIONS.has(ext)) {
+    if (!options.pipelines.knowledge) return { kind: "ignored", reason: "knowledge-disabled" };
+    return { kind: "knowledge", reason: "knowledge-extension" };
+  }
+  if (CODE_WATCH_EXTENSIONS.has(ext)) {
+    if (!options.pipelines.code) return { kind: "ignored", reason: "code-disabled" };
+    return { kind: "code", reason: "code-extension" };
+  }
+  return { kind: "ignored", reason: "unsupported-extension" };
+}

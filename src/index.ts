@@ -12,6 +12,7 @@ import type { ScanResult } from "./types.js";
 import type { CodesightConfig } from "./types.js";
 import {
   buildGitHookScript,
+  classifyWatchChange,
   getWatchIgnoreDirs,
   summarizeChangedFiles,
   summarizeCodemapRefreshPlan,
@@ -63,7 +64,7 @@ function printHelp() {
     npx ${BRAND} --codemap               # Scan + generate CodeMap shadow output + compatibility wiki
     npx ${BRAND} --init                  # Scan + generate AI config files
     npx ${BRAND} --open                  # Scan + open visual report
-    npx ${BRAND} --watch --codemap       # Watch mode with CodeMap refresh + scan-state
+    npx ${BRAND} --watch --codemap       # Watch mode: code on code changes, knowledge on .md changes
     npx ${BRAND} --mcp                   # Start MCP server
     npx ${BRAND} --hook                  # Install git pre-commit hook
     npx ${BRAND} --hook --codemap --codemap-policy shadow # Install hook with shadow policy default (safe for adoption)
@@ -145,32 +146,30 @@ async function watchMode(
   maxDepth: number,
   userConfig: CodesightConfig = {},
   wikiMode = false,
-  codemapMode = false
+  codemapMode = false,
+  runKnowledgePipeline = false
 ) {
-  console.log(`  Watching for changes... (Ctrl+C to stop)\n`);
-
-  const WATCH_EXTENSIONS = new Set([
-    ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
-    ".py", ".go", ".vue", ".svelte", ".rb", ".ex", ".exs",
-    ".java", ".kt", ".rs", ".php",
-    ".json", ".yaml", ".yml", ".toml", ".env",
-    ".prisma", ".graphql", ".gql",
-  ]);
+  const knowledgeNote = runKnowledgePipeline ? " (code + knowledge)" : "";
+  console.log(`  Watching for changes${knowledgeNote}... (Ctrl+C to stop)\n`);
 
   const IGNORE_DIRS = new Set(getWatchIgnoreDirs(outputDirName));
+  const PIPELINES = { code: true, knowledge: runKnowledgePipeline };
 
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-  let isScanning = false;
-  let changedFiles: string[] = [];
+  let codeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let knowledgeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let isCodeScanning = false;
+  let isKnowledgeRefreshing = false;
+  let codeChangedFiles: string[] = [];
+  let knowledgeChangedFiles: string[] = [];
 
-  const runScan = async () => {
-    if (isScanning) return;
-    isScanning = true;
-    const files = [...changedFiles];
-      changedFiles = [];
+  const runCodeScan = async () => {
+    if (isCodeScanning) return;
+    isCodeScanning = true;
+    const files = [...codeChangedFiles];
+    codeChangedFiles = [];
     try {
       const fileList = summarizeChangedFiles(files);
-      console.log(`\n  Changes detected (${fileList}), re-scanning...\n`);
+      console.log(`\n  Code changes detected (${fileList}), re-scanning...\n`);
       const watchResult = await scan(root, outputDirName, maxDepth, userConfig);
       if (wikiMode) {
         process.stdout.write("  Regenerating wiki...");
@@ -192,27 +191,48 @@ async function watchMode(
     } catch (err: any) {
       console.error("  Scan error:", err.message);
     }
-    isScanning = false;
+    isCodeScanning = false;
+  };
+
+  const runKnowledgeRefresh = async () => {
+    if (isKnowledgeRefreshing) return;
+    isKnowledgeRefreshing = true;
+    const files = [...knowledgeChangedFiles];
+    knowledgeChangedFiles = [];
+    try {
+      const fileList = summarizeChangedFiles(files);
+      console.log(`\n  Knowledge changes detected (${fileList}), refreshing...\n`);
+      await runKnowledgeScan(root, outputDirName, maxDepth, codemapMode, userConfig, {
+        changedFiles: files,
+        quiet: true,
+        trigger: "watch",
+      });
+    } catch (err: any) {
+      console.error("  Knowledge refresh error:", err.message);
+    }
+    isKnowledgeRefreshing = false;
   };
 
   const { watch } = await import("node:fs");
-  const { extname: ext } = await import("node:path");
 
   const watcher = watch(root, { recursive: true }, (_event, filename) => {
     if (!filename) return;
+    const classification = classifyWatchChange(filename, {
+      ignoreDirs: IGNORE_DIRS,
+      pipelines: PIPELINES,
+    });
+    if (classification.kind === "ignored") return;
+
     const normalizedFilename = filename.replace(/\\/g, "/");
-
-    // Skip ignored directories
-    const parts = normalizedFilename.split("/");
-    if (parts.some((p) => IGNORE_DIRS.has(p))) return;
-
-    // Only trigger on relevant file extensions
-    const fileExt = ext(normalizedFilename);
-    if (!WATCH_EXTENSIONS.has(fileExt)) return;
-
-    changedFiles.push(normalizedFilename);
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(runScan, 500);
+    if (classification.kind === "code") {
+      codeChangedFiles.push(normalizedFilename);
+      if (codeDebounceTimer) clearTimeout(codeDebounceTimer);
+      codeDebounceTimer = setTimeout(runCodeScan, 500);
+    } else if (classification.kind === "knowledge") {
+      knowledgeChangedFiles.push(normalizedFilename);
+      if (knowledgeDebounceTimer) clearTimeout(knowledgeDebounceTimer);
+      knowledgeDebounceTimer = setTimeout(runKnowledgeRefresh, 500);
+    }
   });
 
   process.on("SIGINT", () => {
@@ -780,7 +800,19 @@ async function main() {
 
   // Watch mode (blocks)
   if (doWatch) {
-    await watchMode(root, outputDirName, maxDepth, config, doWiki, doCodemap);
+    // Bare `--watch --codemap` (no explicit --mode) refreshes both pipelines:
+    // code on code-file changes, knowledge on .md/.mdx changes. Mirrors the G2
+    // unified default. `--watch --mode code --codemap` keeps code-only.
+    const runKnowledgePipelineInWatch = doCodemap && !modeExplicit;
+    await watchMode(
+      root,
+      outputDirName,
+      maxDepth,
+      config,
+      doWiki,
+      doCodemap,
+      runKnowledgePipelineInWatch,
+    );
   }
 }
 

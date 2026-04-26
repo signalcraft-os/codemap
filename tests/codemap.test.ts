@@ -10,6 +10,7 @@ import {
   buildClaimHealthIncidents,
   buildCodemapImpactIndex,
   buildGitHookScript,
+  classifyWatchChange,
   CODEMAP_DIRECTORIES,
   CODEMAP_FILES,
   collectImpactedSourcePaths,
@@ -3961,4 +3962,76 @@ test("CLI --codemap without --mode runs both code and knowledge pipelines so the
       await rm(repoRoot, { recursive: true, force: true });
     }
   });
+});
+
+test("classifyWatchChange routes md to knowledge, code files to code, and respects pipeline gating + ignore dirs", () => {
+  const ignoreDirs = new Set(getWatchIgnoreDirs(".codesight"));
+  const both = { code: true, knowledge: true } as const;
+
+  // Markdown -> knowledge pipeline
+  assert.equal(classifyWatchChange("docs/decisions.md", { ignoreDirs, pipelines: both }).kind, "knowledge");
+  assert.equal(classifyWatchChange("notes/idea.mdx", { ignoreDirs, pipelines: both }).kind, "knowledge");
+
+  // Code-shaped extensions -> code pipeline
+  assert.equal(classifyWatchChange("src/index.ts", { ignoreDirs, pipelines: both }).kind, "code");
+  assert.equal(classifyWatchChange("backend/api.py", { ignoreDirs, pipelines: both }).kind, "code");
+  assert.equal(classifyWatchChange("config.json", { ignoreDirs, pipelines: both }).kind, "code");
+  assert.equal(classifyWatchChange("schema.prisma", { ignoreDirs, pipelines: both }).kind, "code");
+
+  // Generated and tooling dirs are skipped (parity with the original WATCH_EXTENSIONS gate)
+  assert.equal(classifyWatchChange("node_modules/foo/index.ts", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange(".codemap/views/index.md", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange(".git/HEAD", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange(".codesight/wiki/index.md", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange("dist/index.js", { ignoreDirs, pipelines: both }).kind, "ignored");
+
+  // Unsupported / no extension files are ignored
+  assert.equal(classifyWatchChange("README.txt", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange("LICENSE", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange("image.png", { ignoreDirs, pipelines: both }).kind, "ignored");
+
+  // --watch --mode code --codemap escape hatch: knowledge pipeline disabled
+  assert.equal(
+    classifyWatchChange("decisions.md", { ignoreDirs, pipelines: { code: true, knowledge: false } }).kind,
+    "ignored",
+    "md change must not fire when knowledge pipeline is disabled (code-only escape hatch)",
+  );
+  assert.equal(
+    classifyWatchChange("decisions.md", { ignoreDirs, pipelines: { code: true, knowledge: false } }).reason,
+    "knowledge-disabled",
+  );
+  assert.equal(
+    classifyWatchChange("src/x.ts", { ignoreDirs, pipelines: { code: true, knowledge: false } }).kind,
+    "code",
+  );
+
+  // --watch --mode knowledge --codemap escape hatch: code pipeline disabled
+  assert.equal(
+    classifyWatchChange("src/x.ts", { ignoreDirs, pipelines: { code: false, knowledge: true } }).kind,
+    "ignored",
+    "code change must not fire when code pipeline is disabled (knowledge-only escape hatch)",
+  );
+  assert.equal(
+    classifyWatchChange("src/x.ts", { ignoreDirs, pipelines: { code: false, knowledge: true } }).reason,
+    "code-disabled",
+  );
+  assert.equal(
+    classifyWatchChange("notes/decision.md", { ignoreDirs, pipelines: { code: false, knowledge: true } }).kind,
+    "knowledge",
+  );
+
+  // Backslash normalization (Windows native fs.watch emits backslash separators)
+  assert.equal(
+    classifyWatchChange("docs\\decisions.md", { ignoreDirs, pipelines: both }).kind,
+    "knowledge",
+  );
+  assert.equal(
+    classifyWatchChange("node_modules\\pkg\\index.ts", { ignoreDirs, pipelines: both }).kind,
+    "ignored",
+  );
+
+  // Empty / null / undefined are explicit no-ops
+  assert.equal(classifyWatchChange("", { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange(null, { ignoreDirs, pipelines: both }).kind, "ignored");
+  assert.equal(classifyWatchChange(undefined, { ignoreDirs, pipelines: both }).kind, "ignored");
 });
