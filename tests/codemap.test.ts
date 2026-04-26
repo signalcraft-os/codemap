@@ -8,13 +8,21 @@ import { gunzipSync } from "node:zlib";
 import {
   AI_RECORDED_TAG,
   buildClaimHealthIncidents,
+  buildCodeTelemetryEvent,
   buildCodemapImpactIndex,
   buildGitHookScript,
+  buildKnowledgeTelemetryEvent,
   classifyWatchChange,
   CODEMAP_DIRECTORIES,
   CODEMAP_FILES,
   collectImpactedSourcePaths,
   collectImpactedWorkspaces,
+  computeProjectHash,
+  countRecordedDecisions,
+  formatSlackPayload,
+  postTelemetry,
+  TELEMETRY_ENV_VAR,
+  TELEMETRY_SCHEMA_VERSION,
   DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
   FileClaimStore,
   FileConflictStore,
@@ -4034,4 +4042,206 @@ test("classifyWatchChange routes md to knowledge, code files to code, and respec
   assert.equal(classifyWatchChange("", { ignoreDirs, pipelines: both }).kind, "ignored");
   assert.equal(classifyWatchChange(null, { ignoreDirs, pipelines: both }).kind, "ignored");
   assert.equal(classifyWatchChange(undefined, { ignoreDirs, pipelines: both }).kind, "ignored");
+});
+
+test("computeProjectHash is stable per (machine, project) pair and not reversible to a path", () => {
+  const a = computeProjectHash("/d/AI_Lab/Apps/signalcraft-report-builder");
+  const b = computeProjectHash("/d/AI_Lab/Apps/signalcraft-report-builder");
+  const c = computeProjectHash("/d/AI_Lab/Apps/signalcraft-os");
+
+  assert.equal(a, b, "same path on same machine produces same hash");
+  assert.notEqual(a, c, "different projects produce different hashes");
+  assert.equal(a.length, 12, "hash is truncated to 12 chars for compact display");
+  assert.match(a, /^[0-9a-f]{12}$/, "hash is lowercase hex");
+});
+
+test("buildCodeTelemetryEvent produces a clean payload with no PII", () => {
+  const codeResult = {
+    outputRoot: "/should/not/leak",
+    snapshots: 27,
+    claims: 58,
+    evidence: 142,
+    verificationRecords: 47,
+    conflicts: 0,
+    views: [{ path: "should/not/leak.md" } as any],
+    compatibilityViews: [],
+    compatibilityParity: { legacyWikiPresent: false } as any,
+    incidents: [
+      { severity: "high" } as any,
+      { severity: "medium" } as any,
+      { severity: "medium" } as any,
+      { severity: "low" } as any,
+    ],
+    refreshPlan: {} as any,
+    scanState: {} as any,
+    historyArchiveManifest: {} as any,
+    historyStorage: {} as any,
+  };
+
+  const event = buildCodeTelemetryEvent(codeResult as any, {
+    repoRoot: "/d/AI_Lab/Apps/signalcraft-report-builder",
+    cliVersion: "1.13.1",
+    trigger: "cli",
+    decisionsRecordedTotal: 0,
+  });
+
+  assert.equal(event.type, "codemap_publish");
+  assert.equal(event.schemaVersion, TELEMETRY_SCHEMA_VERSION);
+  assert.equal(event.domain, "code");
+  assert.equal(event.trigger, "cli");
+  assert.equal(event.cliVersion, "1.13.1");
+  assert.equal(event.counts.claims, 58);
+  assert.equal(event.counts.snapshots, 27);
+  assert.equal(event.counts.conflicts, 0);
+  assert.deepEqual(event.incidents, { total: 4, high: 1, medium: 2, low: 1 });
+  assert.equal(event.decisionsRecordedTotal, 0);
+  assert.match(event.projectHash, /^[0-9a-f]{12}$/);
+
+  const serialized = JSON.stringify(event);
+  assert.equal(
+    serialized.includes("/d/AI_Lab"),
+    false,
+    "raw repo path must not leak into the telemetry payload",
+  );
+  assert.equal(
+    serialized.includes("/should/not/leak"),
+    false,
+    "outputRoot and view paths must not leak into the telemetry payload",
+  );
+  assert.equal(
+    serialized.includes("signalcraft"),
+    false,
+    "project name must not leak into the telemetry payload",
+  );
+});
+
+test("buildKnowledgeTelemetryEvent uses knowledge-only counts (not preserved code totals)", () => {
+  const knowledgeResult = {
+    outputRoot: "/d/proj",
+    snapshots: 200, // total snapshots (includes code preserved across runs)
+    claims: 150,    // total claims (includes code preserved)
+    evidence: 400,
+    verificationRecords: 100,
+    conflicts: 0,
+    knowledgeSnapshots: 35,
+    knowledgeClaims: 32,
+    knowledgeEvidence: 32,
+    views: [],
+    compatibilityViews: [],
+    compatibilityParity: { legacyKnowledgePresent: false } as any,
+    incidents: [],
+    refreshPlan: {} as any,
+    scanState: {} as any,
+  };
+
+  const event = buildKnowledgeTelemetryEvent(knowledgeResult as any, {
+    repoRoot: "/d/proj",
+    cliVersion: "1.13.1",
+    trigger: "watch",
+    decisionsRecordedTotal: 2,
+  });
+
+  assert.equal(event.domain, "knowledge");
+  assert.equal(event.trigger, "watch");
+  // Knowledge-only counts (32, 35), NOT the inflated totals (150, 200)
+  assert.equal(event.counts.claims, 32, "must use knowledgeClaims, not the preserved-across-runs claims total");
+  assert.equal(event.counts.snapshots, 35, "must use knowledgeSnapshots, not the preserved snapshots total");
+  assert.equal(event.counts.evidence, 32, "must use knowledgeEvidence");
+  assert.equal(event.decisionsRecordedTotal, 2);
+});
+
+test("formatSlackPayload renders a readable text shape with severity emoji", () => {
+  const cleanEvent = buildCodeTelemetryEvent({
+    snapshots: 27,
+    claims: 58,
+    evidence: 142,
+    verificationRecords: 47,
+    conflicts: 0,
+    incidents: [],
+  } as any, {
+    repoRoot: "/d/proj",
+    cliVersion: "1.13.1",
+    trigger: "cli",
+    decisionsRecordedTotal: 0,
+  });
+
+  const cleanText = formatSlackPayload(cleanEvent).text;
+  assert.match(cleanText, /:bar_chart:/, "clean run uses bar_chart emoji");
+  assert.match(cleanText, /\[code\]/);
+  assert.match(cleanText, /\(cli\)/);
+  assert.match(cleanText, /v1\.13\.1/);
+  assert.match(cleanText, /claims: 58/);
+  assert.match(cleanText, /0 incidents/);
+  assert.match(cleanText, /decisions recorded: 0/);
+
+  const highSevEvent = buildCodeTelemetryEvent({
+    snapshots: 27,
+    claims: 58,
+    evidence: 142,
+    verificationRecords: 47,
+    conflicts: 1,
+    incidents: [{ severity: "high" } as any],
+  } as any, {
+    repoRoot: "/d/proj",
+    cliVersion: "1.13.1",
+    trigger: "hook",
+    decisionsRecordedTotal: 3,
+  });
+  const highSevText = formatSlackPayload(highSevEvent).text;
+  assert.match(highSevText, /:red_circle:/, "high-severity run uses red_circle emoji");
+  assert.match(highSevText, /1 incidents \(high=1, medium=0, low=0\)/);
+});
+
+test("postTelemetry is a silent no-op when CODEMAP_TELEMETRY_URL is unset", async () => {
+  const previousValue = process.env[TELEMETRY_ENV_VAR];
+  delete process.env[TELEMETRY_ENV_VAR];
+
+  let fetchCalled = false;
+  const originalFetch = globalThis.fetch;
+  // @ts-expect-error monkey-patch for the test
+  globalThis.fetch = async () => {
+    fetchCalled = true;
+    return new Response(null, { status: 200 });
+  };
+
+  try {
+    const event = buildCodeTelemetryEvent({
+      snapshots: 1, claims: 1, evidence: 1, verificationRecords: 1, conflicts: 0, incidents: [],
+    } as any, {
+      repoRoot: "/d/proj", cliVersion: "1.13.1", trigger: "cli", decisionsRecordedTotal: 0,
+    });
+
+    // Must not throw, must not call fetch.
+    await postTelemetry(event);
+    assert.equal(fetchCalled, false, "postTelemetry must not call fetch when env var is unset");
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (previousValue !== undefined) process.env[TELEMETRY_ENV_VAR] = previousValue;
+  }
+});
+
+test("countRecordedDecisions returns 0 when the recorded-decisions directory is missing", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-tele-"));
+  try {
+    const count = await countRecordedDecisions(repoRoot);
+    assert.equal(count, 0);
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("countRecordedDecisions counts only .md files in .codemap/notes/decisions/recorded/", async () => {
+  const repoRoot = await mkdtemp(join(tmpdir(), "codemap-tele-"));
+  try {
+    const dir = join(repoRoot, ".codemap", "notes", "decisions", "recorded");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "2026-04-26-pick-polar.md"), "# decision\n");
+    await writeFile(join(dir, "2026-04-27-rename-auth.md"), "# decision\n");
+    await writeFile(join(dir, "scratch.txt"), "ignore me");
+
+    const count = await countRecordedDecisions(repoRoot);
+    assert.equal(count, 2, "only .md files count toward decisions-recorded");
+  } finally {
+    await rm(repoRoot, { recursive: true, force: true });
+  }
 });

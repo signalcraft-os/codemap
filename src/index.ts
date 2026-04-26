@@ -18,6 +18,12 @@ import {
   summarizeCodemapRefreshPlan,
   type CodemapHookPolicy,
 } from "./codemap/runtime/index.js";
+import {
+  buildCodeTelemetryEvent,
+  buildKnowledgeTelemetryEvent,
+  countRecordedDecisions,
+  postTelemetry,
+} from "./codemap/telemetry/index.js";
 import { loadConfig, mergeCliConfig } from "./config.js";
 import { scan, BRAND, VERSION } from "./core.js";
 
@@ -187,6 +193,12 @@ async function watchMode(
         });
         console.log(` ${codemapResult.claims} claims, ${codemapResult.incidents.length} incidents`);
         console.log(`  Scope:    ${summarizeCodemapRefreshPlan(codemapResult.refreshPlan)}`);
+        await postTelemetry(buildCodeTelemetryEvent(codemapResult, {
+          repoRoot: root,
+          cliVersion: VERSION,
+          trigger: "watch",
+          decisionsRecordedTotal: await countRecordedDecisions(root),
+        }));
       }
     } catch (err: any) {
       console.error("  Scan error:", err.message);
@@ -305,6 +317,12 @@ async function runKnowledgeScan(
     console.log(`  Publish:  .codemap/publish/publish-plan.json`);
     console.log(`  Refresh:  .codemap/cache/refresh-plan.json`);
     console.log(`  State:    .codemap/cache/scan-state.json`);
+    await postTelemetry(buildKnowledgeTelemetryEvent(codemapResult, {
+      repoRoot: root,
+      cliVersion: VERSION,
+      trigger: options.trigger ?? "cli",
+      decisionsRecordedTotal: await countRecordedDecisions(root),
+    }));
   }
 
   const elapsed = Date.now() - startTime;
@@ -682,6 +700,12 @@ async function main() {
     console.log(`  Refresh:  .codemap/cache/refresh-plan.json`);
     console.log(`  State:    .codemap/cache/scan-state.json`);
     console.log("");
+    await postTelemetry(buildCodeTelemetryEvent(codemapResult, {
+      repoRoot: root,
+      cliVersion: VERSION,
+      trigger: codemapTrigger,
+      decisionsRecordedTotal: await countRecordedDecisions(root),
+    }));
   }
 
   // Auto-run knowledge pipeline alongside code so the AI adoption template's

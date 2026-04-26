@@ -10,3 +10,4 @@ export * from "./mcp/index.js";
 export * from "./runtime/index.js";
 export * from "./migration/index.js";
 export * from "./notes/index.js";
+export * from "./telemetry/index.js";
