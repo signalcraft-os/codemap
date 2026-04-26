@@ -123,6 +123,14 @@ export function hashFileContent(content: string): string {
   return createHash("sha1").update(content).digest("hex").slice(0, 12);
 }
 
+// Normalize a `.codesightignore` pattern down to a directory-name segment.
+// Strips a leading `/` and any trailing `/`, `/*`, or `/**` so `clients/`,
+// `clients/*`, `clients/**`, and `clients` all collapse to `clients` and are
+// honored equivalently when matched against directory names or path prefixes.
+function normalizeIgnorePattern(pattern: string): string {
+  return pattern.replace(/\/(\*\*?)?$/, "").replace(/^\//, "");
+}
+
 export async function collectFiles(
   root: string,
   maxDepth = 10,
@@ -130,11 +138,7 @@ export async function collectFiles(
 ): Promise<string[]> {
   const files: string[] = [];
 
-  // Build a set of exact dir names to skip (simple patterns like "data", "fixtures")
-  // Also support simple glob-style with trailing /* or /**
-  const extraIgnore = new Set(
-    ignorePatterns.map((p) => p.replace(/\/\*\*?$/, "").replace(/^\//, ""))
-  );
+  const extraIgnore = new Set(ignorePatterns.map(normalizeIgnorePattern));
 
   function shouldIgnoreDir(name: string, fullPath: string): boolean {
     if (IGNORE_DIRS.has(name)) return true;
@@ -142,7 +146,7 @@ export async function collectFiles(
     // Check if any pattern matches a path segment
     const rel = fullPath.replace(root, "").replace(/^[/\\]/, "");
     for (const pattern of ignorePatterns) {
-      const clean = pattern.replace(/\/\*\*?$/, "").replace(/^\//, "");
+      const clean = normalizeIgnorePattern(pattern);
       if (rel === clean || rel.startsWith(clean + "/") || rel.startsWith(clean + "\\")) return true;
     }
     return false;

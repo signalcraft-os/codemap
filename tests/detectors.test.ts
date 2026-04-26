@@ -1193,3 +1193,32 @@ end sub
     );
   });
 });
+
+describe("collectFiles ignore-pattern normalization", async () => {
+  const mods = await loadModules();
+
+  // Per gitignore convention, `clients/`, `clients/*`, `clients/**`, and
+  // `clients` should all skip the `clients` directory equivalently.
+  // Regression test for the bug where a bare trailing slash silently no-op'd.
+  for (const variant of ["clients/", "clients/**", "clients/*", "clients"]) {
+    it(`honors "${variant}" as a directory exclusion`, async () => {
+      const dir = await writeFixture(`ignore-${variant.replace(/[*/]/g, "x")}`, {
+        "package.json": JSON.stringify({ name: "test", dependencies: { hono: "^4.0.0" } }),
+        "src/index.ts": `import { Hono } from "hono";\nconst app = new Hono();\nexport default app;`,
+        "clients/acme/notes.ts": "export const acme = 1;",
+        "clients/beta/notes.ts": "export const beta = 2;",
+      });
+      const files = await mods.collectFiles(dir, 10, [variant]);
+      const rels = files.map((p: string) => p.slice(dir.length + 1).replace(/\\/g, "/"));
+      assert.ok(
+        rels.some((r: string) => r === "src/index.ts"),
+        `expected src/index.ts to be collected, got: ${rels.join(", ")}`,
+      );
+      assert.equal(
+        rels.filter((r: string) => r.startsWith("clients/")).length,
+        0,
+        `expected zero clients/ files with pattern "${variant}", got: ${rels.filter((r: string) => r.startsWith("clients/")).join(", ")}`,
+      );
+    });
+  }
+});
