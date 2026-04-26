@@ -24,21 +24,58 @@ Implemented and green:
 - `codemap_record_decision` MCP tool: AI sessions persist in-conversation decisions to `notes/decisions/recorded/<timestamp>-<slug>.md`; resulting `knowledge_decision` claims are tagged `recorded` with lower default confidence (0.5 / 0.6) so a human can review and promote
 - `[recorded]` marker in `.codemap/views/knowledge/overview.md` for AI-recorded decisions
 
-Latest verification (2026-04-26, after watch parity fix):
+Latest verification (2026-04-26, after first beta-tester onboarding session):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `129` passing, `0` failing
-- last commit: `26d2a3a` (`--watch --codemap` parity with the G2 unified default)
+- result: `146` passing, `0` failing
+- last commit: `a8906e4` (beta-tester doc updated to recommend `--install-prompts`)
+- global install of `codesight` is live on the maintainer's machine via `npm install -g .`; refresh after each rebuild
 
 ## Documentation
 
 - [docs/codemap-architecture.md](codemap-architecture.md) — design rationale (the *why*).
 - [docs/codemap-quickstart.md](codemap-quickstart.md) — adoption guide: install, hook policy modes, incident sources reference, AI adoption template (the *how*). **Read this if you are adopting CodeMap on a new project.**
+- [docs/codemap-beta-tester-setup.md](codemap-beta-tester-setup.md) — onboarding doc for individual beta testers: install, telemetry env-var setup, first scan, what feedback the maintainer is looking for. Hand this to anyone you bring into the dogfood pool.
 - This file — current state and what's next.
 
 ## Recent Cumulative Changes (2026-04-23 → 2026-04-26)
 
 Grouped by phase, newest first.
+
+### Multi-LLM prompt-install flag set (2026-04-26, commits `8718988` + `cea8c03` + `a8906e4`)
+- Closes the highest-friction onboarding step — manually pasting a CodeMap adoption template into a CLAUDE.md / AGENTS.md / GEMINI.md — by turning it into a one-shot CLI command. The "project memory" section is now a versioned asset (`assets/claude-md-codemap-section.md`) wrapped in HTML-comment marker tags (`<!-- codemap-claude-md-section-begin -->` ... `-end -->`) so future installs can replace the section in place without disturbing surrounding content.
+- New flags ([src/index.ts](../src/index.ts), [src/codemap/install/index.ts](../src/codemap/install/index.ts)):
+  - `codesight --install-claude-md` → `~/.claude/CLAUDE.md` (Claude Code)
+  - `codesight --install-codex-md` → `~/.codex/AGENTS.md` (OpenAI Codex CLI)
+  - `codesight --install-gemini-md` → `~/.gemini/GEMINI.md` (Gemini CLI)
+  - `codesight --install-prompts` → all three in one shot
+  - `--force` modifier replaces an existing section between markers (idempotent without `--force`).
+- Same asset content lands in all three files — no cross-references needed because each LLM tool reads only its own config and gets identical instructions. The section opens with "If `.codemap/` does not exist in this project, ignore this entire section" so it's a no-op on projects that haven't adopted CodeMap, making global install non-disruptive.
+- Tests added (6 total across the install module): create-when-missing, append-preserves-prior-content, idempotent-skip, force-replaces-only-between-markers, `defaultPromptTargets()` surface check, multi-target identical-content verification.
+- Maintainer's machine is now installed across all three globals (`~/.claude/CLAUDE.md` + `~/.codex/AGENTS.md` + `~/.gemini/GEMINI.md`).
+- Beta tester doc updated to recommend `codesight --install-prompts` instead of manual paste.
+- **Naming note:** internal helper renamed `installClaudeMdSection` → `installPromptSection` (the function never cared which file it wrote to). The asset filename and marker tags retain the `claude-md` prefix for back-compat — these are exposed in user files and renaming would orphan installs that have already run.
+
+### Beta-tester onboarding doc + onboarding playbook (2026-04-26, commit `8f18f8d`)
+- New [docs/codemap-beta-tester-setup.md](codemap-beta-tester-setup.md). Standalone setup guide separate from the quickstart: explicit privacy disclosure (what telemetry sends vs explicitly does not send, with a pointer to the regression-test leak audit), install via clone + `npm install -g .`, env-var setup across macOS/Linux/Windows shells, first scan, what to commit, AI adoption wiring, what feedback is wanted, opt-out instructions. Sized for a single beta tester to read in 10 minutes and a maintainer to walk through on a Zoom in 15.
+
+### Opt-in telemetry firehose (2026-04-26, commit `073c778`)
+- Phase 1 of the dashboard/telemetry candidate. Closes the "I can't see if CodeMap is earning its keep across my projects" visibility gap. New module [src/codemap/telemetry/index.ts](../src/codemap/telemetry/index.ts) (~190 lines):
+  - `computeProjectHash`: `sha256(hostname:repoRoot)` first 12 chars — opaque, stable per (machine, project), not reversible without the absolute path.
+  - `buildCodeTelemetryEvent` / `buildKnowledgeTelemetryEvent`: pure data extractors that turn a publish result into a `TelemetryEvent`. Knowledge variant uses `knowledgeClaims` / `knowledgeSnapshots` / `knowledgeEvidence` (NOT the inflated totals that include preserved code claims).
+  - `formatSlackPayload`: renders a 3-line Slack text card with severity emoji (`:bar_chart:` for clean, `:large_yellow_circle:` for medium-incident runs, `:red_circle:` for high).
+  - `postTelemetry`: env-var-gated (`CODEMAP_TELEMETRY_URL`) fire-and-forget POST with 3-second timeout. Detects Slack URLs and formats accordingly; sends raw JSON otherwise. Errors swallowed to stderr — telemetry never fails a build.
+  - `countRecordedDecisions`: counts `.md` files under `.codemap/notes/decisions/recorded/` — the leading indicator that the AI adoption template is firing on real sessions.
+- Wired into three publish-end points: `main()` one-shot CodeMap code pipeline, `runKnowledgeScan` (covers CLI default auto-run + watch-mode knowledge refresh), and `watchMode runCodeScan` (watch trigger).
+- Architecture: data-extraction is separated from rendering and transport so the same payload can carry forward to a future multi-user aggregator without rewriting (per the candidate's stated requirement).
+- Privacy: payload contains counts, opaque project hash, CLI version, trigger, timestamp, schema version. **Not sent:** paths, claim text, source code, view paths, project name. Regression test asserts the serialized payload contains none of: the repo path, the legacy output root, or the project name.
+- **Decided transport: Slack incoming webhook** (out-of-band agreement: 1–3 testers, free-tier Slack workspace owned by the maintainer). Not Supabase — the maintainer's existing signalcraft-os Supabase project carries production app data and the schema-namespace separation, while workable, was deemed risk for trivial benefit. Discord considered and rejected on user-friction grounds (maintainer doesn't use Discord daily). Webhook URL is provisioned but not yet pasted into the maintainer's `~/.bashrc` / Windows env — pending VS Code restart at the maintainer's discretion. Until then, telemetry is a silent no-op (verified by regression test).
+- Tests added (7): hash stability, payload shape + leak audit, knowledge-only count selection, Slack formatter with severity-emoji branching, env-unset no-op, recorded-decisions counter for missing-dir + `.md`-only filtering.
+
+### `.codesightignore` parser fix: bare trailing slash now honored (2026-04-26, commit `6ee46a3`)
+- Discovered while dogfooding CodeMap on `/d/AI_Lab/Apps/signalcraft-report-builder` ([src/scanner.ts](../src/scanner.ts)). A natural-looking `.codesightignore` line of `clients/` (gitignore convention for "the clients directory") silently no-op'd because the pattern normalizer only stripped `/*` or `/**` suffixes, never a bare trailing `/`. The dogfooder had to write `clients/**` to get the exclusion to fire.
+- Fix: extracted a `normalizeIgnorePattern` helper used in both the extra-ignore set and the prefix check, with a broader regex (`\/(\*\*?)?$`) so `clients`, `clients/`, `clients/*`, and `clients/**` all collapse to `clients` and match equivalently.
+- Regression test runs four pattern variants through `collectFiles` against a fixture with files under `clients/` to confirm none of them slip through. **Without this fix, every adopter who wrote a natural-looking ignore pattern would have hit the same silent no-op.** The dogfood session caught it immediately.
 
 ### Watch-mode parity with the G2 unified default (2026-04-26, commit `26d2a3a`)
 - Symmetric follow-up to commit `f0a5d41`. Bare `--watch --codemap` (no explicit `--mode`) now refreshes both pipelines: code on code-file changes, knowledge on `*.md` / `*.mdx` changes. The escape hatches `--watch --mode code --codemap` and `--watch --mode knowledge --codemap` keep their scoped behavior (the latter still routes to `watchKnowledgeMode` upstream).
@@ -97,13 +134,15 @@ Grouped by phase, newest first.
 
 In rough priority order, with short rationale:
 
-1. **Local `--report` HTML dashboard + opt-in telemetry firehose** — surfaced during the 2026-04-26 dogfood-on-signalcraft-report-builder session. CodeMap's design is "data files in a repo," with no human-facing visibility surface; users have no way to tell if the system is earning its keep without manually reading `.codemap/views/index.md` and the incident NDJSON files. Phase 1: a `--report` flag that emits `.codemap/views/dashboard.html` from existing publish data (claim counts, sparkline of `.codemap/history/` over time, incidents by severity, AI-recorded decision count, top stale/conflicting claims, recent decisions list). **Architectural requirement:** keep the data-extraction layer (`buildDashboardPayload(codemap) → DashboardPayload`) separate from the renderer (`renderDashboardHtml(payload) → string`) so the same payload can later carry forward to multi-user telemetry without a rewrite. Phase 2 (deferred until real demand): an opt-in `CODEMAP_TELEMETRY_URL` env var triggers a fire-and-forget POST of the same payload after each publish — opaque project ID = `sha256(hostname, project_root)`, counts only, no file paths or claim text. Smallest viable transport at 1–3 beta testers is a shared Discord/Slack webhook; the channel is the dashboard. Phase 2 considerations: the data shape can fingerprint a project to someone who knows the tester pool, so "anonymized" needs explicit consent language before broader distribution. Estimated effort: half a day for phase 1, another half day for phase 2.
-2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of `codemap_record_decision`. Still defer until the decision tool is proven in real use; the dogfood session didn't generate any real recorded decisions yet (the example "Adopt Polar for marketplace payouts" was test-fixture text), so the AI-recording path is unproven on a real session.
-3. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back from the conflict-surfacing session as scope creep; revisit if AI sessions report missing the signal in those tools.
-4. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
-5. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
-6. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
-7. **Fold `watchKnowledgeMode` into `watchMode`** — now structurally redundant after the 2026-04-26 watch-parity fix; would simplify but risks behavior drift. Defer until there's a real reason to touch the file.
+1. **Local `--report` HTML dashboard** — phase 1 of the dashboard/telemetry candidate; phase 2 (telemetry firehose) shipped on 2026-04-26 (commit `073c778`). Still pending: a `--report` flag that emits `.codemap/views/dashboard.html` from the same `TelemetryEvent` data shape used by the telemetry POST (sparkline of `.codemap/history/` over time, incidents by severity, AI-recorded decision count, top stale/conflicting claims, recent decisions list). The data-extraction layer in `src/codemap/telemetry/index.ts` is already separated from rendering/transport per the architectural requirement, so the dashboard reuses `buildCodeTelemetryEvent` / `buildKnowledgeTelemetryEvent` directly. Half a day of work. Solves the "I want to see signal without scrolling Slack" complement to the firehose.
+2. **Per-project `AGENTS.md` install flag** — `--install-prompt-here` (or similar) that drops the same CodeMap section into the *current project's* `AGENTS.md` (vs. the global `~/.codex/AGENTS.md` we already cover). Surfaced during the 2026-04-26 multi-LLM extension discussion: Cursor / Cline / Roo Cline / Aider all read project-level `AGENTS.md` (or equivalent), and a per-project install would cover them in one shot. Defer until a beta tester reports actually using one of those wrappers — speculative builds add flag noise.
+3. **Continue.dev install flag** — Continue uses `~/.continue/config.json` + `.continuerules` rather than a flat markdown file, so a `--install-continue` flag would need a different schema serializer. Defer until a beta tester reports using Continue.dev with a local model and asks for it.
+4. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of `codemap_record_decision`. Still defer until the decision tool is proven in real use; the 2026-04-26 sessions still produced 0 real recorded decisions (telemetry hasn't fired in a real session yet because the maintainer hasn't restarted VS Code to pick up the env var).
+5. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back from the conflict-surfacing session as scope creep; revisit if AI sessions report missing the signal in those tools.
+6. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
+7. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+8. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+9. **Fold `watchKnowledgeMode` into `watchMode`** — now structurally redundant after the 2026-04-26 watch-parity fix; would simplify but risks behavior drift. Defer until there's a real reason to touch the file.
 
 ### Audited but not fixed (configuration, not bugs)
 
