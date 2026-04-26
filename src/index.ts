@@ -24,6 +24,10 @@ import {
   countRecordedDecisions,
   postTelemetry,
 } from "./codemap/telemetry/index.js";
+import {
+  defaultClaudeMdPath,
+  installClaudeMdSection,
+} from "./codemap/install/index.js";
 import { loadConfig, mergeCliConfig } from "./config.js";
 import { scan, BRAND, VERSION } from "./core.js";
 
@@ -42,6 +46,8 @@ function printHelp() {
     --watch                  Re-scan on file changes (use with --wiki/--codemap to refresh derived outputs)
     --hook                   Install git pre-commit hook (dual-write with --codemap)
     --codemap-policy <mode>  Default CodeMap hook policy baked into the installed hook script (shadow|warn|block; default: warn). Env CODESIGHT_CODEMAP_POLICY overrides at commit time.
+    --install-claude-md      Append the CodeMap "project memory" section to ~/.claude/CLAUDE.md so AI sessions across all projects pick up the adoption template. Idempotent; pass --force to update an existing section in place.
+    --force                  Allow --install-claude-md to overwrite an existing CodeMap section (replaces content between codemap-claude-md-section markers).
     --html                   Generate interactive HTML report
     --open                   Generate HTML report and open in browser
     --mcp                    Start as MCP server (for Claude Code, Cursor)
@@ -449,6 +455,8 @@ async function main() {
   let refreshPackage = "";
   let codemapTrigger: "cli" | "hook" = "cli";
   let codemapPolicy: CodemapHookPolicy = "warn";
+  let doInstallClaudeMd = false;
+  let installForce = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -499,6 +507,10 @@ async function main() {
       }
     } else if (arg === "--hook-run") {
       codemapTrigger = "hook";
+    } else if (arg === "--install-claude-md") {
+      doInstallClaudeMd = true;
+    } else if (arg === "--force") {
+      installForce = true;
     } else if (arg === "--codemap-policy" && args[i + 1]) {
       const value = args[++i];
       if (value === "shadow" || value === "warn" || value === "block") {
@@ -509,6 +521,30 @@ async function main() {
     } else if (!arg.startsWith("-")) {
       targetDir = resolve(arg);
     }
+  }
+
+  // Standalone install mode: append the CodeMap "project memory" section
+  // to ~/.claude/CLAUDE.md so AI sessions across all projects pick up the
+  // adoption template. Idempotent; --force replaces an existing section.
+  if (doInstallClaudeMd) {
+    const result = await installClaudeMdSection({ force: installForce });
+    const prefix = `  ${BRAND}: `;
+    if (result.action === "created") {
+      console.log(`${prefix}created ${result.targetPath}`);
+    } else if (result.action === "appended") {
+      console.log(`${prefix}appended CodeMap section to ${result.targetPath}`);
+    } else if (result.action === "updated") {
+      console.log(`${prefix}updated CodeMap section in ${result.targetPath}`);
+    } else {
+      console.log(
+        `${prefix}CodeMap section already present in ${result.targetPath}; pass --force to update.`,
+      );
+    }
+    if (result.targetPath !== defaultClaudeMdPath()) {
+      // Should not happen via the CLI today, but keep an honest log if it ever does.
+      console.log(`  (Target overridden; default is ${defaultClaudeMdPath()})`);
+    }
+    return;
   }
 
   // MCP server mode (blocks, no other output)

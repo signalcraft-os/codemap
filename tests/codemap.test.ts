@@ -20,7 +20,10 @@ import {
   computeProjectHash,
   countRecordedDecisions,
   formatSlackPayload,
+  installClaudeMdSection,
   postTelemetry,
+  SECTION_BEGIN_MARKER,
+  SECTION_END_MARKER,
   TELEMETRY_ENV_VAR,
   TELEMETRY_SCHEMA_VERSION,
   DEFAULT_CRITICAL_CODE_CLAIM_TYPES,
@@ -4243,5 +4246,89 @@ test("countRecordedDecisions counts only .md files in .codemap/notes/decisions/r
     assert.equal(count, 2, "only .md files count toward decisions-recorded");
   } finally {
     await rm(repoRoot, { recursive: true, force: true });
+  }
+});
+
+test("installClaudeMdSection creates ~/.claude/CLAUDE.md when missing", async () => {
+  const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
+  try {
+    const targetPath = join(homeDir, "CLAUDE.md");
+    const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nfake body\n${SECTION_END_MARKER}\n`;
+
+    const result = await installClaudeMdSection({ targetPath, sectionText });
+    assert.equal(result.action, "created");
+    assert.equal(result.targetPath, targetPath);
+
+    const written = await readFile(targetPath, "utf-8");
+    assert.ok(written.includes(SECTION_BEGIN_MARKER));
+    assert.ok(written.includes(SECTION_END_MARKER));
+    assert.ok(written.includes("## CodeMap (project memory)"));
+  } finally {
+    await rm(homeDir, { recursive: true, force: true });
+  }
+});
+
+test("installClaudeMdSection appends to an existing CLAUDE.md without disturbing prior content", async () => {
+  const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
+  try {
+    const targetPath = join(homeDir, "CLAUDE.md");
+    const original = "# Global Defaults\n\n- Terse responses.\n- No emojis.\n";
+    await writeFile(targetPath, original);
+
+    const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nfake body\n${SECTION_END_MARKER}\n`;
+    const result = await installClaudeMdSection({ targetPath, sectionText });
+    assert.equal(result.action, "appended");
+
+    const written = await readFile(targetPath, "utf-8");
+    assert.ok(written.startsWith("# Global Defaults"), "prior content must be preserved at the top");
+    assert.ok(written.includes("- No emojis."), "prior bullet list must be preserved verbatim");
+    assert.ok(written.includes(SECTION_BEGIN_MARKER), "CodeMap section must be present");
+    assert.ok(written.indexOf("- No emojis.") < written.indexOf(SECTION_BEGIN_MARKER), "section must be appended below prior content");
+  } finally {
+    await rm(homeDir, { recursive: true, force: true });
+  }
+});
+
+test("installClaudeMdSection is idempotent: a second run with the section already present is a skip", async () => {
+  const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
+  try {
+    const targetPath = join(homeDir, "CLAUDE.md");
+    const sectionText = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\noriginal body\n${SECTION_END_MARKER}\n`;
+
+    await installClaudeMdSection({ targetPath, sectionText });
+    const firstWrite = await readFile(targetPath, "utf-8");
+
+    const second = await installClaudeMdSection({ targetPath, sectionText });
+    assert.equal(second.action, "skipped", "second run without --force must be a no-op skip");
+
+    const secondWrite = await readFile(targetPath, "utf-8");
+    assert.equal(firstWrite, secondWrite, "skipped install must not modify the file");
+  } finally {
+    await rm(homeDir, { recursive: true, force: true });
+  }
+});
+
+test("installClaudeMdSection with force replaces the section between markers without touching surrounding content", async () => {
+  const homeDir = await mkdtemp(join(tmpdir(), "codemap-install-"));
+  try {
+    const targetPath = join(homeDir, "CLAUDE.md");
+    const before = "# Global Defaults\n\n- Terse responses.\n";
+    const oldSection = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nold body that should be replaced\n${SECTION_END_MARKER}`;
+    const after = "\n\n## My custom section\n\nUser-authored content below the codemap section.\n";
+    await writeFile(targetPath, `${before}\n${oldSection}${after}`);
+
+    const newSection = `${SECTION_BEGIN_MARKER}\n## CodeMap (project memory)\n\nnew body\n${SECTION_END_MARKER}\n`;
+    const result = await installClaudeMdSection({ targetPath, sectionText: newSection, force: true });
+    assert.equal(result.action, "updated");
+
+    const written = await readFile(targetPath, "utf-8");
+    assert.ok(written.includes("# Global Defaults"), "user content above must be preserved");
+    assert.ok(written.includes("- Terse responses."), "user bullets above must be preserved");
+    assert.ok(written.includes("## My custom section"), "user-authored section below must be preserved");
+    assert.ok(written.includes("User-authored content below the codemap section."), "user prose below must be preserved");
+    assert.ok(written.includes("new body"), "new section content must be present");
+    assert.equal(written.includes("old body that should be replaced"), false, "old section content must be gone");
+  } finally {
+    await rm(homeDir, { recursive: true, force: true });
   }
 });
