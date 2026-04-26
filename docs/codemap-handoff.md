@@ -1,6 +1,6 @@
 # CodeMap Handoff
 
-Date: 2026-04-25
+Date: 2026-04-26
 Branch: `bootstrap-from-codesight`
 
 ## Current State
@@ -24,11 +24,11 @@ Implemented and green:
 - `codemap_record_decision` MCP tool: AI sessions persist in-conversation decisions to `notes/decisions/recorded/<timestamp>-<slug>.md`; resulting `knowledge_decision` claims are tagged `recorded` with lower default confidence (0.5 / 0.6) so a human can review and promote
 - `[recorded]` marker in `.codemap/views/knowledge/overview.md` for AI-recorded decisions
 
-Latest verification (2026-04-25, after dogfood session):
+Latest verification (2026-04-26, after watch parity fix):
 - `corepack pnpm build` passed
 - `corepack pnpm test` passed
-- result: `128` passing, `0` failing
-- last commit: `f0a5d41` (knowledge extractor hygiene + incident scope + unified `--codemap` default)
+- result: `129` passing, `0` failing
+- last commit: `26d2a3a` (`--watch --codemap` parity with the G2 unified default)
 
 ## Documentation
 
@@ -36,9 +36,15 @@ Latest verification (2026-04-25, after dogfood session):
 - [docs/codemap-quickstart.md](codemap-quickstart.md) — adoption guide: install, hook policy modes, incident sources reference, AI adoption template (the *how*). **Read this if you are adopting CodeMap on a new project.**
 - This file — current state and what's next.
 
-## Recent Cumulative Changes (2026-04-23 → 2026-04-25)
+## Recent Cumulative Changes (2026-04-23 → 2026-04-26)
 
 Grouped by phase, newest first.
+
+### Watch-mode parity with the G2 unified default (2026-04-26, commit `26d2a3a`)
+- Symmetric follow-up to commit `f0a5d41`. Bare `--watch --codemap` (no explicit `--mode`) now refreshes both pipelines: code on code-file changes, knowledge on `*.md` / `*.mdx` changes. The escape hatches `--watch --mode code --codemap` and `--watch --mode knowledge --codemap` keep their scoped behavior (the latter still routes to `watchKnowledgeMode` upstream).
+- Pure `classifyWatchChange(filename, { ignoreDirs, pipelines })` helper added to [src/codemap/runtime/index.ts](../src/codemap/runtime/index.ts) along with `CODE_WATCH_EXTENSIONS` / `KNOWLEDGE_WATCH_EXTENSIONS`. The `watchMode` loop in [src/index.ts](../src/index.ts) now consults the classifier on each `fs.watch` event and routes to one of two debounce timers (500ms each) — code-file saves never trigger spurious knowledge work, and knowledge changes don't kick off a code rescan. `runKnowledgePipelineInWatch = doCodemap && !modeExplicit` is the single dispatch flag derived in `main()`.
+- Regression test exercises the classifier as a unit ([tests/codemap.test.ts](../tests/codemap.test.ts)): asserts md → knowledge, code extensions → code, ignored dirs / pipeline gating / Windows backslash / null inputs all classify correctly. Subprocess-driven watch tests are flaky on Windows, so the building-block path is tested directly per Codex's "if a feature is hard to test, simplify the feature until it becomes testable" rule.
+- `watchKnowledgeMode` is now structurally redundant with `watchMode(.., runCode=false, runKnowledge=true)`; left untouched to keep the diff minimal. Worth folding in only if it starts drifting.
 
 ### First dogfood audit + adoption-blocker fixes (2026-04-25, commit `f0a5d41`)
 - Ran `node dist/index.js --codemap` against this repo and inspected what CodeMap says about itself. Invariants #1, #3, #5, #6 were all observably enforced; the audit surfaced three real gaps that would degrade the AI adoption story before it started.
@@ -91,12 +97,12 @@ Grouped by phase, newest first.
 
 In rough priority order, with short rationale:
 
-1. **Watch-mode parity with the G2 unified default** ([src/codemap/runtime/watch.ts] etc.) — `--watch --codemap` still triggers only the code pipeline on file changes, so knowledge claims go stale on every code-file save. This is the only place the auto-run-both-pipelines story is incomplete. Likely shape: also debounce-trigger the knowledge pipeline on `*.md` changes (and on code changes if any decision claims reference code-related notes). Symmetric follow-up to the G2 commit; not a blocker for adoption but conspicuous if anyone enables watch mode.
-2. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of `codemap_record_decision`. Still defer until the decision tool is proven in real use; the dogfood session didn't generate any real recorded decisions yet (the example "Adopt Polar for marketplace payouts" was test-fixture text), so the AI-recording path is unproven on a real session.
-3. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back from the conflict-surfacing session as scope creep; revisit if AI sessions report missing the signal in those tools.
-4. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
-5. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
-6. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+1. **`codemap_record_question` (symmetric recording for open questions)** — natural extension of `codemap_record_decision`. Still defer until the decision tool is proven in real use; the dogfood session didn't generate any real recorded decisions yet (the example "Adopt Polar for marketplace payouts" was test-fixture text), so the AI-recording path is unproven on a real session.
+2. **Extend `conflictCount` to non-search formatters** — `formatCodemapKnowledgeOverview`, `formatCodemapSnapshotDiff`, etc. carry the data field but don't print it. Held back from the conflict-surfacing session as scope creep; revisit if AI sessions report missing the signal in those tools.
+3. **`severityCounts` ordering on publish status** — currently alpha-sorted (`high, low, medium`); `bySource` uses severity rank. Align both for consistency, or document the divergence. Cosmetic; not blocking.
+4. **Opportunistic legacy-bundle migration** — rewrite existing combined-bundle snapshot archives as shards on next sync. Polish for repos that accumulated bundles before the sharding change.
+5. **Retention / deletion policy for archived snapshots** — explicit "keep last N runs" or "delete after age X" policy. Discussed and **deferred** because retention is the default-correct stance for a verified-claim system; deletion is a disk-pressure escape valve, not a feature. Revisit only when a real repo hits a real disk constraint.
+6. **Fold `watchKnowledgeMode` into `watchMode`** — now structurally redundant after the 2026-04-26 watch-parity fix; would simplify but risks behavior drift. Defer until there's a real reason to touch the file.
 
 ### Audited but not fixed (configuration, not bugs)
 
