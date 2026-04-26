@@ -121,14 +121,35 @@ The `.codemap/` directory is generally safe to commit if you want claim history 
 
 ## Wire CodeMap into your AI assistant
 
-This is where the leverage lives. CodeMap is most useful when AI sessions actually consume the claim graph instead of grepping source. Append the AI adoption template from [docs/codemap-quickstart.md §4](codemap-quickstart.md#4-ai-adoption-template) to your project's `CLAUDE.md` (or `AGENTS.md` / `GEMINI.md` — whatever your AI reads at session start).
+This is where the leverage lives. CodeMap is most useful when AI sessions actually consume the claim graph instead of grepping source. **One command installs the AI adoption template into your global LLM config files** (Claude Code, OpenAI Codex CLI, Gemini CLI):
 
-Two key behaviors the template trains:
+```bash
+codesight --install-prompts
+```
+
+This appends a "CodeMap (project memory)" section to:
+- `~/.claude/CLAUDE.md`
+- `~/.codex/AGENTS.md`
+- `~/.gemini/GEMINI.md`
+
+The section is wrapped in HTML-comment markers so re-running is idempotent (a second run skips, doesn't duplicate). If you only use one tool, you can scope:
+
+```bash
+codesight --install-claude-md   # Claude Code only
+codesight --install-codex-md    # OpenAI Codex CLI only
+codesight --install-gemini-md   # Gemini CLI only
+```
+
+Pass `--force` to update an already-installed section in place (replaces the content between markers; leaves your other content untouched). If you'd rather skip the auto-install and paste manually, the section text is at [docs/codemap-quickstart.md §4](codemap-quickstart.md#4-ai-adoption-template).
+
+Two key behaviors the template trains in your AI assistant:
 
 1. **At session start**, the AI reads `.codemap/views/knowledge/overview.md` to orient on prior decisions and open questions.
 2. **When you change direction** ("let's switch from Stripe to Polar", "deprecate the old auth flow", "use Postgres instead of MySQL"), the AI calls the `codemap_record_decision` MCP tool to persist the decision as a `knowledge_decision` claim. You'll see the file appear at `.codemap/notes/decisions/recorded/<timestamp>-<slug>.md`.
 
 The MCP tool requires the `codesight --mcp` server to be wired into your AI client's MCP config. If you haven't done that, the AI falls back to reading `.codemap/views/` directly and the recording reflex won't fire — that's still useful, just less complete.
+
+**Soft conditional behavior.** The installed section starts with "If `.codemap/` does not exist in this project, ignore this entire section." That means projects without CodeMap aren't disturbed by the global install — the AI just skips the section. So setting it once globally is non-disruptive even on projects you haven't adopted CodeMap on.
 
 ## What we want feedback on
 
