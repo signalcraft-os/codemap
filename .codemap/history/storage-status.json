@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-01T08:48:21.963Z",
+  "policy": {
+    "version": 1,
+    "updatedAt": "2026-05-01T08:48:21.111Z",
+    "mode": "observe",
+    "maxHotBytes": 268435456,
+    "targetHotBytes": 201326592,
+    "warnAtPercent": 0.8,
+    "segmentTargetBytes": 33554432,
+    "preserveFullLedgers": true
+  },
+  "usage": {
+    "hotBytes": 1789340,
+    "totalBytes": 1789340,
+    "ledgerBytes": 566127,
+    "metadataBytes": 96199,
+    "byClaimPartitionBytes": 563507,
+    "byRunPartitionBytes": 563507,
+    "archiveBytes": 0
+  },
+  "counts": {
+    "claimHistoryEntries": 148,
+    "verificationHistoryEntries": 709,
+    "publishRuns": 2,
+    "claimPartitions": 148,
+    "verificationPartitions": 148,
+    "runClaimPartitions": 2,
+    "runVerificationPartitions": 2,
+    "archivedSegments": 0,
+    "plannedSegments": 0
+  },
+  "budget": {
+    "maxHotBytes": 268435456,
+    "targetHotBytes": 201326592,
+    "warnAtPercent": 0.8,
+    "warnAtBytes": 214748364,
+    "warningThresholdExceeded": false,
+    "overBudget": false
+  },
+  "archiveCandidates": [],
+  "snapshotStorage": {
+    "hotBytes": 383364,
+    "archiveBytes": 0,
+    "totalBytes": 383364,
+    "activeSnapshots": 104,
+    "historicalHotSnapshots": 0,
+    "archivedSnapshots": 0,
+    "plannedSnapshots": 0
+  },
+  "snapshotArchiveCandidates": [],
+  "notes": [
+    "Append-only history ledgers remain local by policy, so archive planning currently targets partition files before ledger bytes.",
+    "History is intentionally duplicated across by-claim and by-run partitions to optimize deep dives."
+  ]
+}

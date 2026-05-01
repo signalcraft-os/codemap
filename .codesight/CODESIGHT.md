@@ -2,9 +2,9 @@
 
 > **Stack:** raw-http | none | unknown | typescript
 
-> 4 routes (8 inferred) + 1 graphql + 3 ws | 0 models | 0 components | 43 lib files | 6 env vars | 5 middleware | 6 events | 60% test coverage
-> **Token savings:** this file is ~3,800 tokens. Without it, AI exploration would cost ~26,700 tokens. **Saves ~22,900 tokens per conversation.**
-> **Last scanned:** 2026-04-21 09:37 — re-run after significant changes
+> 4 routes (8 inferred) + 1 graphql + 3 ws | 0 models | 0 components | 84 lib files | 9 env vars | 7 middleware | 6 events | 60% test coverage
+> **Token savings:** this file is ~7,000 tokens. Without it, AI exploration would cost ~38,200 tokens. **Saves ~31,200 tokens per conversation.**
+> **Last scanned:** 2026-05-01 08:48 — re-run after significant changes
 
 ---
 
@@ -12,7 +12,7 @@
 
 - `ALL` `/path` [auth, db, cache, queue, email, payment, upload, ai] `[inferred]`
 - `ALL` `/api` [auth, db, cache, queue, email, payment, upload, ai] `[inferred]`
-- `ALL` `/health` [auth, db, cache, queue, payment] `[inferred]` ✓
+- `ALL` `/health` [auth, db, cache, payment, ai] `[inferred]` ✓
 - `GET` `/api/users` [auth, db, cache, queue, payment] `[inferred]` ✓
 
 ## GraphQL
@@ -90,6 +90,139 @@
   - function getDecorators: (ts, node) => any[]
   - function parseDecorator: (ts, sf, decorator) => void
   - function getText: (sf, node) => string
+- `src/codemap/extract/code/components.ts` — function extractComponentClaimGraph: (result, "project" | "components">, options) => Promise<ComponentClaimGraph>, interface ComponentClaimGraph
+- `src/codemap/extract/code/config.ts` — function extractConfigClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "config">>, options) => Promise<ConfigClaimGraph>, interface ConfigClaimGraph
+- `src/codemap/extract/code/env.ts` — function extractEnvClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "config">>, options) => Promise<EnvClaimGraph>, interface EnvClaimGraph
+- `src/codemap/extract/code/hotspots.ts` — function extractHotspotClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "graph">>, options) => Promise<HotspotClaimGraph>, interface HotspotClaimGraph
+- `src/codemap/extract/code/libs.ts` — function extractLibraryClaimGraph: (result, "project" | "libs">, options) => Promise<LibraryClaimGraph>, interface LibraryClaimGraph
+- `src/codemap/extract/code/middleware.ts` — function extractMiddlewareClaimGraph: (result, "project" | "middleware">, options) => Promise<MiddlewareClaimGraph>, interface MiddlewareClaimGraph
+- `src/codemap/extract/code/routes.ts` — function extractRouteClaimGraph: (result, "project" | "routes">, options) => Promise<RouteClaimGraph>, interface RouteClaimGraph
+- `src/codemap/extract/code/schemas.ts` — function extractSchemaClaimGraph: (result, "project" | "schemas">, options) => Promise<SchemaClaimGraph>, interface SchemaClaimGraph
+- `src/codemap/extract/code/source-path-filter.ts` — function createSourcePathMatcher: (sourcePaths?) => void, interface SourcePathFilterOptions
+- `src/codemap/extract/knowledge/notes.ts` — function extractKnowledgeClaimGraph: (repoRoot, map, previousClaims, options) => Promise<KnowledgeClaimGraph>, interface KnowledgeClaimGraph
+- `src/codemap/history/index.ts`
+  - function getClaimHistoryPartitionFile: (claimId) => string
+  - function getVerificationHistoryPartitionFile: (claimId) => string
+  - function getClaimRunHistoryPartitionFile: (runId) => string
+  - function getVerificationRunHistoryPartitionFile: (runId) => string
+  - function createPublishRunRecord: (input) => PublishRunRecord
+  - function buildVerificationHistoryEntries: (input) => VerificationHistoryEntry[]
+  - _...15 more_
+- `src/codemap/history/policy.ts`
+  - function getArchiveSegmentFile: (segmentId) => string
+  - function readArchivedClaimHistoryByRunId: (repoRoot, runId) => Promise<ClaimHistoryEntry[]>
+  - function readArchivedVerificationHistoryByRunId: (repoRoot, runId) => Promise<VerificationHistoryEntry[]>
+  - function readArchivedClaimHistoryByClaimId: (repoRoot, claimId) => Promise<ClaimHistoryEntry[]>
+  - function readArchivedVerificationHistoryByClaimId: (repoRoot, claimId) => Promise<VerificationHistoryEntry[]>
+  - function createDefaultHistoryPolicy: (updatedAt) => CodemapHistoryPolicy
+  - _...13 more_
+- `src/codemap/install/index.ts`
+  - function defaultClaudeMdPath: () => string
+  - function defaultCodexAgentsMdPath: () => string
+  - function defaultGeminiMdPath: () => string
+  - function defaultPromptTargets: () => PromptTarget[]
+  - function installPromptSection: (options) => Promise<InstallPromptResult>
+  - interface InstallPromptOptions
+  - _...5 more_
+- `src/codemap/mcp/index.ts`
+  - function loadCodemapQueryContext: (repoRoot) => Promise<CodemapQueryContext>
+  - function getCodemapOverview: (repoRoot, args) => Promise<CodemapOverviewResponse>
+  - function getCodemapKnowledgeOverview: (repoRoot, args) => Promise<CodemapKnowledgeOverviewResponse>
+  - function searchCodemapClaims: (repoRoot, args) => Promise<CodemapSearchClaimsResponse>
+  - function searchCodemapKnowledge: (repoRoot, args) => Promise<CodemapSearchClaimsResponse>
+  - function getCodemapClaim: (repoRoot, args) => Promise<CodemapClaimDetailResponse | null>
+  - _...54 more_
+- `src/codemap/migration/compatibility-parity.ts`
+  - function compareCompatibilityWiki: (repoRoot, views, generatedAt) => Promise<CompatibilityParityResult>
+  - function compareCompatibilityKnowledge: (repoRoot, views, generatedAt) => Promise<CompatibilityKnowledgeParityResult>
+  - function getCompatibilityParityPath: () => string
+  - interface CompatibilityParityArticle
+  - interface CompatibilityParitySummary
+  - interface CompatibilityParityReport
+  - _...4 more_
+- `src/codemap/model/ids.ts`
+  - function makeCodemapId: (namespace, rawId) => string
+  - function isCodemapId: (value, namespace?) => boolean
+  - function makeHashedCodemapId: (namespace, parts) => string
+  - function makeCodemapStorageBasename: (value, extension) => string
+  - type CodemapIdNamespace
+  - const CODEMAP_ID_SEPARATOR
+- `src/codemap/model/layout.ts`
+  - function getCodemapDirectory: (key) => string
+  - function getCodemapFile: (key) => string
+  - type CodemapDirectoryKey
+  - type CodemapFileKey
+  - const CODEMAP_ROOT_DIR
+  - const CODEMAP_DIRECTORIES
+  - _...1 more_
+- `src/codemap/notes/record-decision.ts`
+  - function recordDecision: (input) => Promise<RecordDecisionResult>
+  - interface RecordDecisionInput
+  - interface RecordDecisionResult
+  - const RECORDED_DECISIONS_DIR
+  - const AI_RECORDED_TAG
+- `src/codemap/publish/claim-health-incidents.ts`
+  - function buildClaimHealthIncidents: (input) => PublishIncident[]
+  - interface ClaimHealthIncidentsInput
+  - const DEFAULT_CRITICAL_CODE_CLAIM_TYPES: ReadonlySet<ClaimType>
+  - const DEFAULT_CRITICAL_KNOWLEDGE_CLAIM_TYPES: ReadonlySet<ClaimType>
+- `src/codemap/publish/code-pipeline.ts`
+  - function publishCodeCodemap: (result, options) => Promise<CodeCodemapPublishResult>
+  - interface CodeCodemapPublishResult
+  - interface CodeCodemapPublishOptions
+- `src/codemap/publish/knowledge-pipeline.ts`
+  - function publishKnowledgeCodemap: (repoRoot, files, options) => Promise<KnowledgeCodemapPublishResult>
+  - interface KnowledgeCodemapPublishResult
+  - interface KnowledgeCodemapPublishOptions
+- `src/codemap/publish/plans.ts`
+  - function normalizeCombinedPublishPlan: (plan) => CombinedPublishPlan | null
+  - function buildCombinedPublishPlan: (domains, PublishPlan>>) => CombinedPublishPlan | null
+  - function writeCodemapPublishPlan: (repoRoot, plan) => Promise<CombinedPublishPlan>
+- `src/codemap/runtime/index.ts`
+  - function buildHotspotRefreshSourcePaths: (changedFiles, currentEdges, previousEdges) => string[]
+  - function buildCodemapImpactIndex: (input) => CodemapImpactIndex
+  - function collectImpactedSourcePaths: (index, changedFiles, options) => string[]
+  - function collectImpactedWorkspaces: (index, changedFiles) => string[]
+  - function buildCodemapScanState: (input) => CodemapScanState
+  - function writeCodemapScanState: (repoRoot, state) => Promise<CodemapCombinedScanState>
+  - _...28 more_
+- `src/codemap/snapshot/manifest.ts` — function buildSnapshotManifest: (snapshots, version) => SnapshotManifest
+- `src/codemap/snapshot/snapshotter.ts`
+  - function normalizeSourcePath: (path) => string
+  - function hashSnapshotContent: (content) => string
+  - function createSnapshotId: (sourcePath, contentHash) => string
+  - function createSourceSnapshot: (input) => Promise<SourceSnapshot>
+  - interface CreateSourceSnapshotInput
+- `src/codemap/store/claims-store.ts` — class FileClaimStore
+- `src/codemap/store/conflict-store.ts` — class FileConflictStore
+- `src/codemap/store/evidence-store.ts` — class FileEvidenceStore
+- `src/codemap/store/fs.ts`
+  - function resolveCodemapPath: (repoRoot, codemapPath) => string
+  - function ensureCodemapLayout: (repoRoot) => Promise<void>
+  - function readJsonFile: (path) => Promise<T | null>
+  - function writeJsonFile: (path, data) => Promise<void>
+  - function readNdjsonFile: (path) => Promise<T[]>
+  - function writeNdjsonFile: (path, rows) => Promise<void>
+  - _...1 more_
+- `src/codemap/store/snapshots-store.ts` — class FileSnapshotStore
+- `src/codemap/store/verification-store.ts` — class FileVerificationStore
+- `src/codemap/telemetry/index.ts`
+  - function computeProjectHash: (repoRoot) => string
+  - function buildCodeTelemetryEvent: (result, options) => TelemetryEvent
+  - function buildKnowledgeTelemetryEvent: (result, options) => TelemetryEvent
+  - function formatSlackPayload: (event) => void
+  - function countRecordedDecisions: (repoRoot) => Promise<number>
+  - function postTelemetry: (event) => Promise<void>
+  - _...8 more_
+- `src/codemap/verify/verify-component.ts` — function verifyComponentClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface ComponentVerificationResult
+- `src/codemap/verify/verify-config.ts` — function verifyConfigClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface ConfigVerificationResult
+- `src/codemap/verify/verify-env.ts` — function verifyEnvClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface EnvVerificationResult
+- `src/codemap/verify/verify-hotspot.ts` — function verifyHotspotClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface HotspotVerificationResult
+- `src/codemap/verify/verify-knowledge.ts` — function verifyKnowledgeClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface KnowledgeVerificationResult
+- `src/codemap/verify/verify-library.ts` — function verifyLibraryClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface LibraryVerificationResult
+- `src/codemap/verify/verify-middleware.ts` — function verifyMiddlewareClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface MiddlewareVerificationResult
+- `src/codemap/verify/verify-route.ts` — function verifyRouteClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface RouteVerificationResult
+- `src/codemap/verify/verify-schema.ts` — function verifySchemaClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface SchemaVerificationResult
 - `src/config.ts` — function loadConfig: (root) => Promise<CodesightConfig>, function mergeCliConfig: (config, cli) => CodesightConfig
 - `src/core.ts`
   - function scan: (root, outputDirName, maxDepth, userConfig, quiet) => Promise<ScanResult>
@@ -140,8 +273,8 @@
 - `src/mcp-server.ts` — function startMCPServer: () => void
 - `src/monorepo/deps.ts` — function extractCrossPackageDeps: (packageDir, workspacePackageNames) => Promise<string[]>, function writeDepsFile: (packageDir, deps, outputDirName) => Promise<void>
 - `src/monorepo/discover.ts` — function discoverPackages: (root, config) => Promise<PackageInfo[]>, interface PackageInfo
-- `src/monorepo/orchestrator.ts` — function runMonorepoScan: (root, userConfig, targetPackage?) => Promise<PackageInfo[]>
-- `src/monorepo/watch.ts` — function watchMonorepo: (root, userConfig) => Promise<void>
+- `src/monorepo/orchestrator.ts` — function runMonorepoScan: (root, userConfig, targetPackage?, options) => Promise<PackageInfo[]>, interface MonorepoScanOptions
+- `src/monorepo/watch.ts` — function watchMonorepo: (root, userConfig, options) => Promise<void>
 - `src/scanner.ts`
   - function readCodesightIgnore: (root) => Promise<string[]>
   - function loadFileHashCache: (outputDir) => Promise<FileHashCache>
@@ -161,9 +294,12 @@
 
 ## Environment Variables
 
+- `AUTH_SECRET` **required** — tests/codemap.test.ts
 - `DATABASE_URL` **required** — tests/fixtures/config-app/.env.example
 - `JWT_SECRET` **required** — tests/fixtures/config-app/.env.example
 - `PORT` (has default) — tests/fixtures/config-app/.env.example
+- `SESSION_SECRET` **required** — tests/codemap.test.ts
+- `STRIPE_SECRET` **required** — tests/codemap.test.ts
 - `VAR` **required** — src/detectors/config.ts
 - `VAR_NAME` **required** — src/detectors/config.ts
 - `VITE_VAR_NAME` **required** — src/detectors/config.ts
@@ -176,6 +312,10 @@
 ---
 
 # Middleware
+
+## validation
+- middleware — `src/codemap/extract/code/middleware.ts`
+- verify-middleware — `src/codemap/verify/verify-middleware.ts`
 
 ## auth
 - middleware — `src/detectors/middleware.ts`
@@ -192,39 +332,39 @@
 
 ## Most Imported Files (change these carefully)
 
-- `src/types.ts` — imported by **44** files
+- `src/types.ts` — imported by **55** files
+- `src/codemap/model/types.ts` — imported by **39** files
+- `src/codemap/model/ids.ts` — imported by **27** files
+- `src/codemap/snapshot/snapshotter.ts` — imported by **22** files
+- `src/codemap/model/layout.ts` — imported by **17** files
 - `src/scanner.ts` — imported by **16** files
+- `src/codemap/extract/code/source-path-filter.ts` — imported by **10** files
+- `src/codemap/store/fs.ts` — imported by **8** files
+- `src/codemap/publish/code-pipeline.ts` — imported by **8** files
 - `src/ast/loader.ts` — imported by **6** files
+- `src/codemap/store/index.ts` — imported by **6** files
 - `src/ast/extract-brightscript.ts` — imported by **5** files
-- `src/detectors/routes.ts` — imported by **3** files
-- `src/detectors/schema.ts` — imported by **3** files
-- `src/detectors/components.ts` — imported by **3** files
-- `src/detectors/config.ts` — imported by **3** files
-- `src/detectors/middleware.ts` — imported by **3** files
-- `src/formatter.ts` — imported by **3** files
-- `src/ast/extract-dart.ts` — imported by **3** files
-- `src/ast/extract-swift.ts` — imported by **3** files
-- `src/ast/extract-android.ts` — imported by **3** files
-- `src/ast/extract-scenegraph.ts` — imported by **3** files
-- `src/ast/extract-csharp.ts` — imported by **3** files
-- `src/ast/extract-php.ts` — imported by **3** files
-- `src/generators/ai-config.ts` — imported by **3** files
-- `src/core.ts` — imported by **3** files
-- `src/monorepo/discover.ts` — imported by **3** files
-- `tests/fixtures/graph-app/src/db.ts` — imported by **3** files
+- `src/codemap/publish/plans.ts` — imported by **4** files
+- `src/codemap/store/claims-store.ts` — imported by **4** files
+- `src/codemap/store/conflict-store.ts` — imported by **4** files
+- `src/codemap/store/evidence-store.ts` — imported by **4** files
+- `src/codemap/store/snapshots-store.ts` — imported by **4** files
+- `src/codemap/store/verification-store.ts` — imported by **4** files
+- `src/codemap/publish/knowledge-pipeline.ts` — imported by **4** files
+- `src/codemap/notes/record-decision.ts` — imported by **3** files
 
 ## Import Map (who imports what)
 
-- `src/types.ts` ← `src/ast/extract-android.ts`, `src/ast/extract-brighterscript.ts`, `src/ast/extract-brightscript.ts`, `src/ast/extract-components.ts`, `src/ast/extract-csharp.ts` +39 more
+- `src/types.ts` ← `src/ast/extract-android.ts`, `src/ast/extract-brighterscript.ts`, `src/ast/extract-brightscript.ts`, `src/ast/extract-components.ts`, `src/ast/extract-csharp.ts` +50 more
+- `src/codemap/model/types.ts` ← `src/codemap/extract/code/components.ts`, `src/codemap/extract/code/config.ts`, `src/codemap/extract/code/env.ts`, `src/codemap/extract/code/hotspots.ts`, `src/codemap/extract/code/libs.ts` +34 more
+- `src/codemap/model/ids.ts` ← `src/codemap/extract/code/components.ts`, `src/codemap/extract/code/config.ts`, `src/codemap/extract/code/env.ts`, `src/codemap/extract/code/hotspots.ts`, `src/codemap/extract/code/libs.ts` +22 more
+- `src/codemap/snapshot/snapshotter.ts` ← `src/codemap/extract/code/components.ts`, `src/codemap/extract/code/config.ts`, `src/codemap/extract/code/env.ts`, `src/codemap/extract/code/hotspots.ts`, `src/codemap/extract/code/libs.ts` +17 more
+- `src/codemap/model/layout.ts` ← `src/codemap/history/index.ts`, `src/codemap/history/policy.ts`, `src/codemap/mcp/index.ts`, `src/codemap/migration/compatibility-parity.ts`, `src/codemap/model/index.ts` +12 more
 - `src/scanner.ts` ← `src/core.ts`, `src/detectors/components.ts`, `src/detectors/config.ts`, `src/detectors/contracts.ts`, `src/detectors/coverage.ts` +11 more
+- `src/codemap/extract/code/source-path-filter.ts` ← `src/codemap/extract/code/components.ts`, `src/codemap/extract/code/config.ts`, `src/codemap/extract/code/env.ts`, `src/codemap/extract/code/hotspots.ts`, `src/codemap/extract/code/index.ts` +5 more
+- `src/codemap/store/fs.ts` ← `src/codemap/history/index.ts`, `src/codemap/history/policy.ts`, `src/codemap/mcp/index.ts`, `src/codemap/publish/knowledge-pipeline.ts`, `src/codemap/publish/plans.ts` +3 more
+- `src/codemap/publish/code-pipeline.ts` ← `src/codemap/publish/index.ts`, `src/codemap/publish/routes-pipeline.ts`, `src/codemap/publish/routes-pipeline.ts`, `src/codemap/telemetry/index.ts`, `src/index.ts` +3 more
 - `src/ast/loader.ts` ← `src/ast/extract-components.ts`, `src/ast/extract-routes.ts`, `src/ast/extract-schema.ts`, `src/detectors/components.ts`, `src/detectors/routes.ts` +1 more
-- `src/ast/extract-brightscript.ts` ← `src/ast/extract-brighterscript.ts`, `src/detectors/events.ts`, `src/detectors/libs.ts`, `src/detectors/middleware.ts`, `src/detectors/routes.ts`
-- `src/detectors/routes.ts` ← `src/core.ts`, `src/eval.ts`, `src/mcp-server.ts`
-- `src/detectors/schema.ts` ← `src/core.ts`, `src/eval.ts`, `src/mcp-server.ts`
-- `src/detectors/components.ts` ← `src/core.ts`, `src/eval.ts`, `src/mcp-server.ts`
-- `src/detectors/config.ts` ← `src/core.ts`, `src/eval.ts`, `src/mcp-server.ts`
-- `src/detectors/middleware.ts` ← `src/core.ts`, `src/eval.ts`, `src/mcp-server.ts`
-- `src/formatter.ts` ← `src/core.ts`, `src/index.ts`, `src/mcp-server.ts`
 
 ---
 
@@ -253,7 +393,7 @@
 # Test Coverage
 
 > **60%** of routes and models are covered by tests
-> 45 test files found
+> 46 test files found
 
 ## Covered Routes
 

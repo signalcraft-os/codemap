@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "domain": "knowledge",
+  "generatedAt": "2026-05-01T08:48:21.963Z",
+  "trigger": "cli",
+  "mode": "full",
+  "changedFiles": [],
+  "impactedClaimTypes": [
+    "knowledge_person",
+    "knowledge_question",
+    "knowledge_summary",
+    "knowledge_theme"
+  ],
+  "targetedClaimCount": 15,
+  "targetedClaimIds": [
+    "claim:16e3802be3764e18bac009e8f1b9b1a86ad2e7655912e9d1ecc358f39a1b246c",
+    "claim:17c363ca2f6abf14009b2110b17563e5d92c42c640d31e75cbfd03f86914eb92",
+    "claim:2d652661c455a94a7ef792f1a3f40950b399f774d082da4c45c5b42a3690b680",
+    "claim:4c52e4824bd4d84100933478888c4de26569c282022a7d2effbffd094b3334bc",
+    "claim:8608ad87d56e3e19bbd5f9373d50f7a9becc5a2cb9514cfda031930a4715fa62",
+    "claim:8914115d54d9b1f59bcec7e0199b958a4b9176edc914a53259a8be1a17d3550a",
+    "claim:a66d6aa5615283ffb2d43609d1f8c9bb35a678bca266bd4423624f3be4fc3b20",
+    "claim:b9d043510e51aa44748919e9008469a1bf302e7c05ea58e1354b30e7cda964d0",
+    "claim:c620e58871f02257406466bc10a0652d308c2c7f9e4df763c0ac36a37d1fdf33",
+    "claim:d25750eb9cd9ec74bb5977cfbb1fb189ae661ff32bdd5120bfab84f288ceb665",
+    "claim:dff2fcd778b34d5590be7d8155e68daeb04d59e96b214fc9782b52f63a1cdc2f",
+    "claim:e2451b647945402c7cb0f0973fb8acc5f0ab929c2b86670775866cd34e1c78d8",
+    "claim:e24c6f5506effce8ef1b9f67767a2972df88c6f227dab45a4b134f74fbde4cfc",
+    "claim:f84d7eb77faa94e1eb6271741abab8bf8b7b28066b3d0a418594885833872f9f",
+    "claim:fb4d77323c08b2b1114f9a61ec4b378b7c8bb50e20cbc1ca012d18b9d635a41e"
+  ],
+  "targetedSourceCount": 8,
+  "targetedSourcePaths": [
+    "AGENTS.md",
+    "README.md",
+    "assets/claude-md-codemap-section.md",
+    "docs/codemap-architecture.md",
+    "docs/codemap-beta-tester-setup.md",
+    "docs/codemap-handoff.md",
+    "docs/codemap-quickstart.md",
+    "eval/README.md"
+  ],
+  "reasons": []
+}

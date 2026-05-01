@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "domain": "knowledge",
+  "generatedAt": "2026-05-01T08:48:21.963Z",
+  "trigger": "cli",
+  "outputDirName": ".codesight",
+  "changedFiles": [],
+  "claims": 148,
+  "snapshots": 104,
+  "evidence": 146,
+  "verificationRecords": 709,
+  "conflicts": 4,
+  "incidents": 0,
+  "views": [
+    ".codemap/views/knowledge/index.md",
+    ".codemap/views/knowledge/overview.md"
+  ],
+  "compatibilityViews": [
+    ".codemap/compatibility/KNOWLEDGE.md"
+  ],
+  "compatibilityParity": {
+    "legacyWikiPresent": true,
+    "matched": 1,
+    "drifted": 0,
+    "missingCompatibility": 0,
+    "extraCompatibility": 0
+  },
+  "refresh": {
+    "mode": "full",
+    "impactedClaimTypes": [
+      "knowledge_person",
+      "knowledge_question",
+      "knowledge_summary",
+      "knowledge_theme"
+    ],
+    "targetedClaimCount": 15,
+    "targetedSourceCount": 8
+  },
+  "currentDomain": "knowledge",
+  "domains": {
+    "code": {
+      "version": 1,
+      "domain": "code",
+      "generatedAt": "2026-05-01T08:48:21.111Z",
+      "trigger": "cli",
+      "outputDirName": ".codesight",
+      "changedFiles": [],
+      "claims": 133,
+      "snapshots": 96,
+      "evidence": 131,
+      "verificationRecords": 649,
+      "conflicts": 4,
+      "incidents": 3,
+      "views": [
+        ".codemap/views/code/config.md",
+        ".codemap/views/code/impact.md",
+        ".codemap/views/code/libraries.md",
+        ".codemap/views/code/routes.md",
+        ".codemap/views/code/runtime.md",
+        ".codemap/views/index.md",
+        ".codemap/views/overview.md"
+      ],
+      "compatibilityViews": [
+        ".codemap/compatibility/wiki/api.md",
+        ".codemap/compatibility/wiki/detectors.test.md",
+        ".codemap/compatibility/wiki/graphql.md",
+        ".codemap/compatibility/wiki/index.md",
+        ".codemap/compatibility/wiki/infra.md",
+        ".codemap/compatibility/wiki/libraries.md",
+        ".codemap/compatibility/wiki/overview.md",
+        ".codemap/compatibility/wiki/path.md"
+      ],
+      "compatibilityParity": {
+        "legacyWikiPresent": true,
+        "matched": 8,
+        "drifted": 0,
+        "missingCompatibility": 1,
+        "extraCompatibility": 0
+      },
+      "refresh": {
+        "mode": "full",
+        "impactedClaimTypes": [
+          "config_file",
+          "dependency_hotspot",
+          "env_var",
+          "library_module",
+          "middleware",
+          "package_dependency",
+          "route"
+        ],
+        "targetedClaimCount": 133,
+        "targetedSourceCount": 96
+      }
+    },
+    "knowledge": {
+      "version": 1,
+      "domain": "knowledge",
+      "generatedAt": "2026-05-01T08:48:21.963Z",
+      "trigger": "cli",
+      "outputDirName": ".codesight",
+      "changedFiles": [],
+      "claims": 148,
+      "snapshots": 104,
+      "evidence": 146,
+      "verificationRecords": 709,
+      "conflicts": 4,
+      "incidents": 0,
+      "views": [
+        ".codemap/views/knowledge/index.md",
+        ".codemap/views/knowledge/overview.md"
+      ],
+      "compatibilityViews": [
+        ".codemap/compatibility/KNOWLEDGE.md"
+      ],
+      "compatibilityParity": {
+        "legacyWikiPresent": true,
+        "matched": 1,
+        "drifted": 0,
+        "missingCompatibility": 0,
+        "extraCompatibility": 0
+      },
+      "refresh": {
+        "mode": "full",
+        "impactedClaimTypes": [
+          "knowledge_person",
+          "knowledge_question",
+          "knowledge_summary",
+          "knowledge_theme"
+        ],
+        "targetedClaimCount": 15,
+        "targetedSourceCount": 8
+      }
+    }
+  }
+}

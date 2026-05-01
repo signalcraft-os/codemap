@@ -2,7 +2,7 @@
 
 - `ALL` `/path` [auth, db, cache, queue, email, payment, upload, ai] `[inferred]`
 - `ALL` `/api` [auth, db, cache, queue, email, payment, upload, ai] `[inferred]`
-- `ALL` `/health` [auth, db, cache, queue, payment] `[inferred]` ✓
+- `ALL` `/health` [auth, db, cache, payment, ai] `[inferred]` ✓
 - `GET` `/api/users` [auth, db, cache, queue, payment] `[inferred]` ✓
 
 ## GraphQL

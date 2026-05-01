@@ -1,0 +1,9 @@
+{
+  "id": "snapshot:30768e8373f6946342cfc8e4a129ed6a91e9117a243d671489f0f602dda0a1b5",
+  "sourcePath": "tests/fixtures/middleware-app/src/middleware/rate-limit.ts",
+  "sourceKind": "code",
+  "contentHash": "024ad0f30e4fc22fca0a04d647173c0616142f0178568f18a70af5646b1fcfa8",
+  "language": "typescript",
+  "createdAt": "2026-05-01T08:48:21.044Z",
+  "sizeBytes": 82
+}

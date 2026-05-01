@@ -1,0 +1,1606 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-01T08:48:21.111Z",
+  "edges": [
+    {
+      "from": "src/ast/extract-android.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-brighterscript.ts",
+      "to": "src/ast/extract-brightscript.ts"
+    },
+    {
+      "from": "src/ast/extract-brighterscript.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-brightscript.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-components.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/ast/extract-components.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-csharp.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-dart.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-go.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-php.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-python.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-routes.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/ast/extract-routes.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-scenegraph.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-schema.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/ast/extract-schema.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/ast/extract-swift.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/components.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/components.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/components.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/components.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/components.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/config.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/config.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/config.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/config.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/config.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/env.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/env.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/env.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/env.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/env.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/hotspots.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/hotspots.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/hotspots.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/hotspots.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/hotspots.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/components.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/config.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/env.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/hotspots.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/libs.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/middleware.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/routes.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/schemas.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/index.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/libs.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/libs.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/libs.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/libs.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/libs.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/middleware.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/middleware.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/middleware.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/middleware.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/middleware.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/routes.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/routes.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/routes.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/routes.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/routes.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/schemas.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/schemas.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/schemas.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/schemas.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/schemas.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/code/source-path-filter.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/index.ts",
+      "to": "src/codemap/extract/code/index.ts"
+    },
+    {
+      "from": "src/codemap/extract/index.ts",
+      "to": "src/codemap/extract/knowledge/index.ts"
+    },
+    {
+      "from": "src/codemap/extract/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/index.ts",
+      "to": "src/codemap/extract/knowledge/notes.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/codemap/extract/code/source-path-filter.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/codemap/notes/record-decision.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/extract/knowledge/notes.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/history/index.ts",
+      "to": "src/codemap/history/policy.ts"
+    },
+    {
+      "from": "src/codemap/history/index.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/history/index.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/history/index.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/history/policy.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/history/policy.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/history/policy.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/extract/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/history/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/install/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/mcp/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/migration/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/model/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/notes/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/publish/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/render/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/runtime/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/snapshot/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/telemetry/index.ts"
+    },
+    {
+      "from": "src/codemap/index.ts",
+      "to": "src/codemap/verify/index.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/publish/plans.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/claims-store.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/conflict-store.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/evidence-store.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/snapshots-store.ts"
+    },
+    {
+      "from": "src/codemap/mcp/index.ts",
+      "to": "src/codemap/store/verification-store.ts"
+    },
+    {
+      "from": "src/codemap/migration/compatibility-parity.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/migration/compatibility-parity.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/migration/compatibility-parity.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/migration/index.ts",
+      "to": "src/codemap/migration/compatibility-parity.ts"
+    },
+    {
+      "from": "src/codemap/migration/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/model/index.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/model/index.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/model/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/notes/index.ts",
+      "to": "src/codemap/notes/record-decision.ts"
+    },
+    {
+      "from": "src/codemap/publish/claim-health-incidents.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/components.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/config.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/env.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/hotspots.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/libs.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/middleware.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/routes.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/extract/code/schemas.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/migration/compatibility-parity.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/publish/plans.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/render/views/code.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/render/views/compatibility-wiki.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/store/claims-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/store/conflict-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/store/evidence-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/store/snapshots-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/store/verification-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-component.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-config.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-env.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-hotspot.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-library.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-middleware.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-route.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/codemap/verify/verify-schema.ts"
+    },
+    {
+      "from": "src/codemap/publish/code-pipeline.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/publish/claim-health-incidents.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/publish/knowledge-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/publish/plans.ts"
+    },
+    {
+      "from": "src/codemap/publish/index.ts",
+      "to": "src/codemap/publish/routes-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/extract/knowledge/index.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/migration/compatibility-parity.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/publish/plans.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/render/views/compatibility-knowledge.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/render/views/knowledge.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/claims-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/conflict-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/evidence-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/snapshots-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/store/verification-store.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/codemap/verify/verify-knowledge.ts"
+    },
+    {
+      "from": "src/codemap/publish/knowledge-pipeline.ts",
+      "to": "src/detectors/knowledge.ts"
+    },
+    {
+      "from": "src/codemap/publish/plans.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/publish/plans.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/publish/plans.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/publish/routes-pipeline.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/render/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/render/index.ts",
+      "to": "src/codemap/render/views/index.ts"
+    },
+    {
+      "from": "src/codemap/render/views/code.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/render/views/compatibility-knowledge.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/render/views/compatibility-wiki.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/render/views/compatibility-wiki.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/render/views/index.ts",
+      "to": "src/codemap/render/views/code.ts"
+    },
+    {
+      "from": "src/codemap/render/views/index.ts",
+      "to": "src/codemap/render/views/compatibility-knowledge.ts"
+    },
+    {
+      "from": "src/codemap/render/views/index.ts",
+      "to": "src/codemap/render/views/compatibility-wiki.ts"
+    },
+    {
+      "from": "src/codemap/render/views/index.ts",
+      "to": "src/codemap/render/views/knowledge.ts"
+    },
+    {
+      "from": "src/codemap/render/views/index.ts",
+      "to": "src/codemap/render/views/routes.ts"
+    },
+    {
+      "from": "src/codemap/render/views/knowledge.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/render/views/routes.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/runtime/index.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/runtime/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/runtime/index.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/runtime/index.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/index.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/index.ts",
+      "to": "src/codemap/snapshot/manifest.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/index.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/manifest.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/snapshotter.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/snapshot/snapshotter.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/claims-store.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/claims-store.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/claims-store.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/store/conflict-store.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/conflict-store.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/conflict-store.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/store/evidence-store.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/evidence-store.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/evidence-store.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/store/fs.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/claims-store.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/conflict-store.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/evidence-store.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/snapshots-store.ts"
+    },
+    {
+      "from": "src/codemap/store/index.ts",
+      "to": "src/codemap/store/verification-store.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/history/policy.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/snapshot/manifest.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/store/snapshots-store.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/store/verification-store.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/codemap/store/verification-store.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/store/verification-store.ts",
+      "to": "src/codemap/store/index.ts"
+    },
+    {
+      "from": "src/codemap/telemetry/index.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/telemetry/index.ts",
+      "to": "src/codemap/publish/knowledge-pipeline.ts"
+    },
+    {
+      "from": "src/codemap/telemetry/index.ts",
+      "to": "src/codemap/runtime/index.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-component.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-config.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-env.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-hotspot.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-knowledge.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-library.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-middleware.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-route.ts"
+    },
+    {
+      "from": "src/codemap/verify/index.ts",
+      "to": "src/codemap/verify/verify-schema.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-component.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-component.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-component.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-config.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-config.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-config.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-env.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-env.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-env.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-hotspot.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-hotspot.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-hotspot.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-knowledge.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-knowledge.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-knowledge.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-library.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-library.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-library.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-middleware.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-middleware.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-middleware.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-route.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-route.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-route.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-schema.ts",
+      "to": "src/codemap/model/ids.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-schema.ts",
+      "to": "src/codemap/model/types.ts"
+    },
+    {
+      "from": "src/codemap/verify/verify-schema.ts",
+      "to": "src/codemap/snapshot/snapshotter.ts"
+    },
+    {
+      "from": "src/config.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/components.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/config.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/contracts.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/coverage.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/events.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/graph.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/graphql.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/libs.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/middleware.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/openapi.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/routes.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/schema.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/detectors/tokens.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/formatter.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/core.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/blast-radius.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/extract-android.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/extract-components.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/extract-dart.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/extract-scenegraph.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/extract-swift.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/components.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/config.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/config.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/contracts.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/contracts.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/coverage.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/coverage.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/events.ts",
+      "to": "src/ast/extract-brightscript.ts"
+    },
+    {
+      "from": "src/detectors/events.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/events.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/graph.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/graph.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/graphql.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/graphql.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/knowledge.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/knowledge.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-brighterscript.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-brightscript.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-csharp.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-dart.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-php.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/ast/extract-swift.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/libs.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/middleware.ts",
+      "to": "src/ast/extract-brightscript.ts"
+    },
+    {
+      "from": "src/detectors/middleware.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/middleware.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/openapi.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-android.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-brightscript.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-csharp.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-dart.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-go.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-php.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-python.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-routes.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-scenegraph.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/extract-swift.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/routes.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-android.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-csharp.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-go.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-php.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-python.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-scenegraph.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/extract-schema.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/ast/loader.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/detectors/schema.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/detectors/tokens.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/detectors/components.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/detectors/config.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/detectors/middleware.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/detectors/routes.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/detectors/schema.ts"
+    },
+    {
+      "from": "src/eval.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/formatter.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/generators/ai-config.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/generators/html-report.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/generators/wiki.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/codemap/publish/knowledge-pipeline.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/config.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/core.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/detectors/blast-radius.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/detectors/knowledge.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/eval.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/formatter.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/generators/ai-config.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/generators/html-report.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/generators/wiki.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/mcp-server.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/monorepo/orchestrator.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/monorepo/watch.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/telemetry.ts"
+    },
+    {
+      "from": "src/index.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/codemap/notes/record-decision.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/codemap/publish/knowledge-pipeline.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/config.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/blast-radius.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/components.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/config.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/contracts.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/events.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/graph.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/graphql.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/libs.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/middleware.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/routes.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/schema.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/detectors/tokens.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/formatter.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/generators/wiki.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/scanner.ts"
+    },
+    {
+      "from": "src/mcp-server.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/monorepo/discover.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/codemap/model/layout.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/codemap/publish/code-pipeline.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/codemap/store/fs.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/core.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/monorepo/deps.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/monorepo/discover.ts"
+    },
+    {
+      "from": "src/monorepo/orchestrator.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/monorepo/watch.ts",
+      "to": "src/codemap/runtime/index.ts"
+    },
+    {
+      "from": "src/monorepo/watch.ts",
+      "to": "src/monorepo/orchestrator.ts"
+    },
+    {
+      "from": "src/monorepo/watch.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "src/telemetry.ts",
+      "to": "src/types.ts"
+    },
+    {
+      "from": "tests/fixtures/graph-app/src/auth.ts",
+      "to": "tests/fixtures/graph-app/src/db.ts"
+    },
+    {
+      "from": "tests/fixtures/graph-app/src/middleware.ts",
+      "to": "tests/fixtures/graph-app/src/auth.ts"
+    },
+    {
+      "from": "tests/fixtures/graph-app/src/middleware.ts",
+      "to": "tests/fixtures/graph-app/src/db.ts"
+    },
+    {
+      "from": "tests/fixtures/graph-app/src/routes.ts",
+      "to": "tests/fixtures/graph-app/src/auth.ts"
+    },
+    {
+      "from": "tests/fixtures/graph-app/src/routes.ts",
+      "to": "tests/fixtures/graph-app/src/db.ts"
+    },
+    {
+      "from": "tests/fixtures/js-imports/src/main.ts",
+      "to": "tests/fixtures/js-imports/src/utils.ts"
+    }
+  ]
+}

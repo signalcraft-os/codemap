@@ -60,6 +60,139 @@
   - function getDecorators: (ts, node) => any[]
   - function parseDecorator: (ts, sf, decorator) => void
   - function getText: (sf, node) => string
+- `src/codemap/extract/code/components.ts` — function extractComponentClaimGraph: (result, "project" | "components">, options) => Promise<ComponentClaimGraph>, interface ComponentClaimGraph
+- `src/codemap/extract/code/config.ts` — function extractConfigClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "config">>, options) => Promise<ConfigClaimGraph>, interface ConfigClaimGraph
+- `src/codemap/extract/code/env.ts` — function extractEnvClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "config">>, options) => Promise<EnvClaimGraph>, interface EnvClaimGraph
+- `src/codemap/extract/code/hotspots.ts` — function extractHotspotClaimGraph: (result, "project"> & Partial<Pick<ScanResult, "graph">>, options) => Promise<HotspotClaimGraph>, interface HotspotClaimGraph
+- `src/codemap/extract/code/libs.ts` — function extractLibraryClaimGraph: (result, "project" | "libs">, options) => Promise<LibraryClaimGraph>, interface LibraryClaimGraph
+- `src/codemap/extract/code/middleware.ts` — function extractMiddlewareClaimGraph: (result, "project" | "middleware">, options) => Promise<MiddlewareClaimGraph>, interface MiddlewareClaimGraph
+- `src/codemap/extract/code/routes.ts` — function extractRouteClaimGraph: (result, "project" | "routes">, options) => Promise<RouteClaimGraph>, interface RouteClaimGraph
+- `src/codemap/extract/code/schemas.ts` — function extractSchemaClaimGraph: (result, "project" | "schemas">, options) => Promise<SchemaClaimGraph>, interface SchemaClaimGraph
+- `src/codemap/extract/code/source-path-filter.ts` — function createSourcePathMatcher: (sourcePaths?) => void, interface SourcePathFilterOptions
+- `src/codemap/extract/knowledge/notes.ts` — function extractKnowledgeClaimGraph: (repoRoot, map, previousClaims, options) => Promise<KnowledgeClaimGraph>, interface KnowledgeClaimGraph
+- `src/codemap/history/index.ts`
+  - function getClaimHistoryPartitionFile: (claimId) => string
+  - function getVerificationHistoryPartitionFile: (claimId) => string
+  - function getClaimRunHistoryPartitionFile: (runId) => string
+  - function getVerificationRunHistoryPartitionFile: (runId) => string
+  - function createPublishRunRecord: (input) => PublishRunRecord
+  - function buildVerificationHistoryEntries: (input) => VerificationHistoryEntry[]
+  - _...15 more_
+- `src/codemap/history/policy.ts`
+  - function getArchiveSegmentFile: (segmentId) => string
+  - function readArchivedClaimHistoryByRunId: (repoRoot, runId) => Promise<ClaimHistoryEntry[]>
+  - function readArchivedVerificationHistoryByRunId: (repoRoot, runId) => Promise<VerificationHistoryEntry[]>
+  - function readArchivedClaimHistoryByClaimId: (repoRoot, claimId) => Promise<ClaimHistoryEntry[]>
+  - function readArchivedVerificationHistoryByClaimId: (repoRoot, claimId) => Promise<VerificationHistoryEntry[]>
+  - function createDefaultHistoryPolicy: (updatedAt) => CodemapHistoryPolicy
+  - _...13 more_
+- `src/codemap/install/index.ts`
+  - function defaultClaudeMdPath: () => string
+  - function defaultCodexAgentsMdPath: () => string
+  - function defaultGeminiMdPath: () => string
+  - function defaultPromptTargets: () => PromptTarget[]
+  - function installPromptSection: (options) => Promise<InstallPromptResult>
+  - interface InstallPromptOptions
+  - _...5 more_
+- `src/codemap/mcp/index.ts`
+  - function loadCodemapQueryContext: (repoRoot) => Promise<CodemapQueryContext>
+  - function getCodemapOverview: (repoRoot, args) => Promise<CodemapOverviewResponse>
+  - function getCodemapKnowledgeOverview: (repoRoot, args) => Promise<CodemapKnowledgeOverviewResponse>
+  - function searchCodemapClaims: (repoRoot, args) => Promise<CodemapSearchClaimsResponse>
+  - function searchCodemapKnowledge: (repoRoot, args) => Promise<CodemapSearchClaimsResponse>
+  - function getCodemapClaim: (repoRoot, args) => Promise<CodemapClaimDetailResponse | null>
+  - _...54 more_
+- `src/codemap/migration/compatibility-parity.ts`
+  - function compareCompatibilityWiki: (repoRoot, views, generatedAt) => Promise<CompatibilityParityResult>
+  - function compareCompatibilityKnowledge: (repoRoot, views, generatedAt) => Promise<CompatibilityKnowledgeParityResult>
+  - function getCompatibilityParityPath: () => string
+  - interface CompatibilityParityArticle
+  - interface CompatibilityParitySummary
+  - interface CompatibilityParityReport
+  - _...4 more_
+- `src/codemap/model/ids.ts`
+  - function makeCodemapId: (namespace, rawId) => string
+  - function isCodemapId: (value, namespace?) => boolean
+  - function makeHashedCodemapId: (namespace, parts) => string
+  - function makeCodemapStorageBasename: (value, extension) => string
+  - type CodemapIdNamespace
+  - const CODEMAP_ID_SEPARATOR
+- `src/codemap/model/layout.ts`
+  - function getCodemapDirectory: (key) => string
+  - function getCodemapFile: (key) => string
+  - type CodemapDirectoryKey
+  - type CodemapFileKey
+  - const CODEMAP_ROOT_DIR
+  - const CODEMAP_DIRECTORIES
+  - _...1 more_
+- `src/codemap/notes/record-decision.ts`
+  - function recordDecision: (input) => Promise<RecordDecisionResult>
+  - interface RecordDecisionInput
+  - interface RecordDecisionResult
+  - const RECORDED_DECISIONS_DIR
+  - const AI_RECORDED_TAG
+- `src/codemap/publish/claim-health-incidents.ts`
+  - function buildClaimHealthIncidents: (input) => PublishIncident[]
+  - interface ClaimHealthIncidentsInput
+  - const DEFAULT_CRITICAL_CODE_CLAIM_TYPES: ReadonlySet<ClaimType>
+  - const DEFAULT_CRITICAL_KNOWLEDGE_CLAIM_TYPES: ReadonlySet<ClaimType>
+- `src/codemap/publish/code-pipeline.ts`
+  - function publishCodeCodemap: (result, options) => Promise<CodeCodemapPublishResult>
+  - interface CodeCodemapPublishResult
+  - interface CodeCodemapPublishOptions
+- `src/codemap/publish/knowledge-pipeline.ts`
+  - function publishKnowledgeCodemap: (repoRoot, files, options) => Promise<KnowledgeCodemapPublishResult>
+  - interface KnowledgeCodemapPublishResult
+  - interface KnowledgeCodemapPublishOptions
+- `src/codemap/publish/plans.ts`
+  - function normalizeCombinedPublishPlan: (plan) => CombinedPublishPlan | null
+  - function buildCombinedPublishPlan: (domains, PublishPlan>>) => CombinedPublishPlan | null
+  - function writeCodemapPublishPlan: (repoRoot, plan) => Promise<CombinedPublishPlan>
+- `src/codemap/runtime/index.ts`
+  - function buildHotspotRefreshSourcePaths: (changedFiles, currentEdges, previousEdges) => string[]
+  - function buildCodemapImpactIndex: (input) => CodemapImpactIndex
+  - function collectImpactedSourcePaths: (index, changedFiles, options) => string[]
+  - function collectImpactedWorkspaces: (index, changedFiles) => string[]
+  - function buildCodemapScanState: (input) => CodemapScanState
+  - function writeCodemapScanState: (repoRoot, state) => Promise<CodemapCombinedScanState>
+  - _...28 more_
+- `src/codemap/snapshot/manifest.ts` — function buildSnapshotManifest: (snapshots, version) => SnapshotManifest
+- `src/codemap/snapshot/snapshotter.ts`
+  - function normalizeSourcePath: (path) => string
+  - function hashSnapshotContent: (content) => string
+  - function createSnapshotId: (sourcePath, contentHash) => string
+  - function createSourceSnapshot: (input) => Promise<SourceSnapshot>
+  - interface CreateSourceSnapshotInput
+- `src/codemap/store/claims-store.ts` — class FileClaimStore
+- `src/codemap/store/conflict-store.ts` — class FileConflictStore
+- `src/codemap/store/evidence-store.ts` — class FileEvidenceStore
+- `src/codemap/store/fs.ts`
+  - function resolveCodemapPath: (repoRoot, codemapPath) => string
+  - function ensureCodemapLayout: (repoRoot) => Promise<void>
+  - function readJsonFile: (path) => Promise<T | null>
+  - function writeJsonFile: (path, data) => Promise<void>
+  - function readNdjsonFile: (path) => Promise<T[]>
+  - function writeNdjsonFile: (path, rows) => Promise<void>
+  - _...1 more_
+- `src/codemap/store/snapshots-store.ts` — class FileSnapshotStore
+- `src/codemap/store/verification-store.ts` — class FileVerificationStore
+- `src/codemap/telemetry/index.ts`
+  - function computeProjectHash: (repoRoot) => string
+  - function buildCodeTelemetryEvent: (result, options) => TelemetryEvent
+  - function buildKnowledgeTelemetryEvent: (result, options) => TelemetryEvent
+  - function formatSlackPayload: (event) => void
+  - function countRecordedDecisions: (repoRoot) => Promise<number>
+  - function postTelemetry: (event) => Promise<void>
+  - _...8 more_
+- `src/codemap/verify/verify-component.ts` — function verifyComponentClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface ComponentVerificationResult
+- `src/codemap/verify/verify-config.ts` — function verifyConfigClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface ConfigVerificationResult
+- `src/codemap/verify/verify-env.ts` — function verifyEnvClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface EnvVerificationResult
+- `src/codemap/verify/verify-hotspot.ts` — function verifyHotspotClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface HotspotVerificationResult
+- `src/codemap/verify/verify-knowledge.ts` — function verifyKnowledgeClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface KnowledgeVerificationResult
+- `src/codemap/verify/verify-library.ts` — function verifyLibraryClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface LibraryVerificationResult
+- `src/codemap/verify/verify-middleware.ts` — function verifyMiddlewareClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface MiddlewareVerificationResult
+- `src/codemap/verify/verify-route.ts` — function verifyRouteClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface RouteVerificationResult
+- `src/codemap/verify/verify-schema.ts` — function verifySchemaClaims: (repoRoot, claims, evidence, snapshots, createdAt) => void, interface SchemaVerificationResult
 - `src/config.ts` — function loadConfig: (root) => Promise<CodesightConfig>, function mergeCliConfig: (config, cli) => CodesightConfig
 - `src/core.ts`
   - function scan: (root, outputDirName, maxDepth, userConfig, quiet) => Promise<ScanResult>
@@ -110,8 +243,8 @@
 - `src/mcp-server.ts` — function startMCPServer: () => void
 - `src/monorepo/deps.ts` — function extractCrossPackageDeps: (packageDir, workspacePackageNames) => Promise<string[]>, function writeDepsFile: (packageDir, deps, outputDirName) => Promise<void>
 - `src/monorepo/discover.ts` — function discoverPackages: (root, config) => Promise<PackageInfo[]>, interface PackageInfo
-- `src/monorepo/orchestrator.ts` — function runMonorepoScan: (root, userConfig, targetPackage?) => Promise<PackageInfo[]>
-- `src/monorepo/watch.ts` — function watchMonorepo: (root, userConfig) => Promise<void>
+- `src/monorepo/orchestrator.ts` — function runMonorepoScan: (root, userConfig, targetPackage?, options) => Promise<PackageInfo[]>, interface MonorepoScanOptions
+- `src/monorepo/watch.ts` — function watchMonorepo: (root, userConfig, options) => Promise<void>
 - `src/scanner.ts`
   - function readCodesightIgnore: (root) => Promise<string[]>
   - function loadFileHashCache: (outputDir) => Promise<FileHashCache>

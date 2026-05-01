@@ -1,0 +1,9 @@
+{
+  "id": "snapshot:0457fad7d55b3bc4a5cc0f9e979c8c12a3b2337596867841b1738cebb91d1489",
+  "sourcePath": "tests/fixtures/graph-app/src/auth.ts",
+  "sourceKind": "code",
+  "contentHash": "302c30caa0c23e3186ce06a687b92ab30a4318828de692a018b20b9ef7f9f237",
+  "language": "typescript",
+  "createdAt": "2026-05-01T08:48:21.044Z",
+  "sizeBytes": 53
+}

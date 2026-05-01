@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-05-01T08:48:21.963Z",
+  "legacyKnowledgePresent": true,
+  "legacyKnowledgePath": ".codesight/KNOWLEDGE.md",
+  "compatibilityKnowledgePath": ".codemap/compatibility/KNOWLEDGE.md",
+  "article": {
+    "article": "KNOWLEDGE.md",
+    "status": "match",
+    "similarity": 0.946236559139785,
+    "legacyTitle": "Knowledge Map — codemap",
+    "compatibilityTitle": "Knowledge Map — Knowledge Map",
+    "notes": [
+      "titles differ after normalization"
+    ]
+  }
+}

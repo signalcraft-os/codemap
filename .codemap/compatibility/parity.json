@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-05-01T08:48:21.111Z",
+  "legacyWikiPresent": true,
+  "legacyWikiDir": ".codesight/wiki",
+  "compatibilityWikiDir": ".codemap/compatibility/wiki",
+  "summary": {
+    "legacyArticles": 9,
+    "compatibilityArticles": 8,
+    "matched": 8,
+    "drifted": 0,
+    "missingCompatibility": 1,
+    "extraCompatibility": 0,
+    "noLegacyBaseline": 0
+  },
+  "articles": [
+    {
+      "article": "api.md",
+      "status": "match",
+      "similarity": 0.7567567567567568,
+      "legacyTitle": "Api",
+      "compatibilityTitle": "Api",
+      "notes": []
+    },
+    {
+      "article": "auth.md",
+      "status": "missing_compatibility",
+      "similarity": null,
+      "legacyTitle": "Auth",
+      "notes": [
+        "legacy wiki article exists but CodeMap compatibility article is missing"
+      ]
+    },
+    {
+      "article": "detectors.test.md",
+      "status": "match",
+      "similarity": 0.8235294117647058,
+      "legacyTitle": "Detectors.test",
+      "compatibilityTitle": "Detectors.test",
+      "notes": []
+    },
+    {
+      "article": "graphql.md",
+      "status": "match",
+      "similarity": 0.8148148148148148,
+      "legacyTitle": "Graphql",
+      "compatibilityTitle": "Graphql",
+      "notes": []
+    },
+    {
+      "article": "index.md",
+      "status": "match",
+      "similarity": 0.18705035971223022,
+      "legacyTitle": "codesight — Wiki",
+      "compatibilityTitle": "codesight — Compatibility Wiki",
+      "notes": []
+    },
+    {
+      "article": "infra.md",
+      "status": "match",
+      "similarity": 0.75,
+      "legacyTitle": "Infra",
+      "compatibilityTitle": "Infra",
+      "notes": []
+    },
+    {
+      "article": "libraries.md",
+      "status": "match",
+      "similarity": 0.6348547717842323,
+      "legacyTitle": "Libraries",
+      "compatibilityTitle": "Libraries",
+      "notes": []
+    },
+    {
+      "article": "overview.md",
+      "status": "match",
+      "similarity": 0.5196850393700787,
+      "legacyTitle": "codesight — Overview",
+      "compatibilityTitle": "codesight — Overview",
+      "notes": []
+    },
+    {
+      "article": "path.md",
+      "status": "match",
+      "similarity": 0.7567567567567568,
+      "legacyTitle": "Path",
+      "compatibilityTitle": "Path",
+      "notes": []
+    }
+  ]
+}

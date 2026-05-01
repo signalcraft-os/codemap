@@ -1,0 +1,9 @@
+{
+  "id": "snapshot:b932083dd6ab937ee3d4f1bf1347231cde3afbfcea0425b6d4c29d249d8cbb43",
+  "sourcePath": "tests/fixtures/graph-app/src/middleware.ts",
+  "sourceKind": "code",
+  "contentHash": "5c55ac2fa72b323870164c2e05f80c5d12f9d147b68373ffde24b48e22337eaf",
+  "language": "typescript",
+  "createdAt": "2026-05-01T08:48:21.044Z",
+  "sizeBytes": 85
+}

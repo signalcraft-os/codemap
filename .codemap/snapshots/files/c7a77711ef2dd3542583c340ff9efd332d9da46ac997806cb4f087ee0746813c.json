@@ -1,0 +1,9 @@
+{
+  "id": "snapshot:3dd30a08768cd8ee706e82afb8f7ad38690fb3918648e3b2ee4525cb9bc10eec",
+  "sourcePath": "src/monorepo/orchestrator.ts",
+  "sourceKind": "code",
+  "contentHash": "f94a8e0938d1b89054c08a03309cd932c0ca9971871a3680c26731c0cc597598",
+  "language": "typescript",
+  "createdAt": "2026-05-01T08:48:21.007Z",
+  "sizeBytes": 8621
+}

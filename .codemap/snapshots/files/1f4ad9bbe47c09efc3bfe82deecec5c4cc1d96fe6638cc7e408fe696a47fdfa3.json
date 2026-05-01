@@ -1,0 +1,8 @@
+{
+  "id": "snapshot:d85dc19f5449cc8183844c88ec2099cbff68e0deaa161d340117b3824b0697ca",
+  "sourcePath": "tests/fixtures/config-app/.env.example",
+  "sourceKind": "config",
+  "contentHash": "e7a440f92b2fc1daa177c7653314747bea2428ffd12900dd84c419cdf8342570",
+  "createdAt": "2026-05-01T08:48:21.031Z",
+  "sizeBytes": 35
+}
