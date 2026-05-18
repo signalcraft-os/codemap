@@ -1,6 +1,6 @@
 {
   "domain": "knowledge",
-  "generatedAt": "2026-05-01T08:48:21.963Z",
+  "generatedAt": "2026-05-18T16:09:51.217Z",
   "items": [
     {
       "claimId": "claim:021b33a59fd0d7197d0498c72096e8309a4519fad8540865af5202003ec0ea8e",
@@ -908,7 +908,7 @@
   "domains": {
     "code": {
       "domain": "code",
-      "generatedAt": "2026-05-01T08:48:21.111Z",
+      "generatedAt": "2026-05-18T16:09:50.859Z",
       "items": [
         {
           "claimId": "claim:021b33a59fd0d7197d0498c72096e8309a4519fad8540865af5202003ec0ea8e",
@@ -980,6 +980,18 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:16e3802be3764e18bac009e8f1b9b1a86ad2e7655912e9d1ecc358f39a1b246c",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:17c363ca2f6abf14009b2110b17563e5d92c42c640d31e75cbfd03f86914eb92",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:190265a1470419833d8e8f01277304cb6a929f20af6b60abc5874520dd7f5c42",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
@@ -1037,6 +1049,12 @@
           "claimId": "claim:2d26b9452f80aba830b7d0406a46312935e04df4f89b0d5278dd55995cc71425",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:2d652661c455a94a7ef792f1a3f40950b399f774d082da4c45c5b42a3690b680",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
           "blockingConflictIds": []
         },
         {
@@ -1121,6 +1139,12 @@
           "claimId": "claim:4a239e7f2bd6662ddc9accc3f8088222e689fd4fcde151a2ba7d6eb54e1dd07c",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:4c52e4824bd4d84100933478888c4de26569c282022a7d2effbffd094b3334bc",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
           "blockingConflictIds": []
         },
         {
@@ -1298,6 +1322,18 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:8608ad87d56e3e19bbd5f9373d50f7a9becc5a2cb9514cfda031930a4715fa62",
+          "decision": "publish",
+          "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:8914115d54d9b1f59bcec7e0199b958a4b9176edc914a53259a8be1a17d3550a",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:8ad3f7681fadb05a965ad7dc1a3eb315e44d9d9322a44e4a35e2b8f846820e50",
           "decision": "republish_with_warning",
           "reason": "claim is publishable with an inferred label",
@@ -1402,6 +1438,12 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:a66d6aa5615283ffb2d43609d1f8c9bb35a678bca266bd4423624f3be4fc3b20",
+          "decision": "publish",
+          "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:aa6b15b56398b36ecc5e885d4e8602a20380ab117941b846f9556c6243d8b9e7",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
@@ -1457,6 +1499,12 @@
         },
         {
           "claimId": "claim:b379965cb42927d88c4cc243f73ae9f01332e35cbe7883db3248184accf33973",
+          "decision": "publish",
+          "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:b9d043510e51aa44748919e9008469a1bf302e7c05ea58e1354b30e7cda964d0",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
           "blockingConflictIds": []
@@ -1540,6 +1588,12 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:c620e58871f02257406466bc10a0652d308c2c7f9e4df763c0ac36a37d1fdf33",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:c8a51eff173a9170191b3f53f927d0886655c41a3c6998225fe8bc087aaac80a",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
@@ -1561,6 +1615,12 @@
           "claimId": "claim:d0a7b43d9f312a3ab22fe404f481b3d7e0f79a7f442dd1931303745333e047e3",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:d25750eb9cd9ec74bb5977cfbb1fb189ae661ff32bdd5120bfab84f288ceb665",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
           "blockingConflictIds": []
         },
         {
@@ -1600,9 +1660,27 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:dff2fcd778b34d5590be7d8155e68daeb04d59e96b214fc9782b52f63a1cdc2f",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:e0cd651eab76837a3fb88bdcc9aabb9141ba77dbe5b95263a613c4f81e36ae72",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:e2451b647945402c7cb0f0973fb8acc5f0ab929c2b86670775866cd34e1c78d8",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:e24c6f5506effce8ef1b9f67767a2972df88c6f227dab45a4b134f74fbde4cfc",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
           "blockingConflictIds": []
         },
         {
@@ -1674,6 +1752,12 @@
           "blockingConflictIds": []
         },
         {
+          "claimId": "claim:f84d7eb77faa94e1eb6271741abab8bf8b7b28066b3d0a418594885833872f9f",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
+          "blockingConflictIds": []
+        },
+        {
           "claimId": "claim:f9948836a0c195b84a67731452648be041d8b08404d3a4dc043d643a322c6c07",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
@@ -1683,6 +1767,12 @@
           "claimId": "claim:fb34225f1618e6b4f9bd68bbd3b6b4bc585b95fc17da4629eaad45fd2c7eeabe",
           "decision": "publish",
           "reason": "claim verified against current source snapshots",
+          "blockingConflictIds": []
+        },
+        {
+          "claimId": "claim:fb4d77323c08b2b1114f9a61ec4b378b7c8bb50e20cbc1ca012d18b9d635a41e",
+          "decision": "republish_with_warning",
+          "reason": "claim is publishable with an inferred label",
           "blockingConflictIds": []
         },
         {
@@ -1725,7 +1815,7 @@
     },
     "knowledge": {
       "domain": "knowledge",
-      "generatedAt": "2026-05-01T08:48:21.963Z",
+      "generatedAt": "2026-05-18T16:09:51.217Z",
       "items": [
         {
           "claimId": "claim:021b33a59fd0d7197d0498c72096e8309a4519fad8540865af5202003ec0ea8e",

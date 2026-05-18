@@ -1,7 +1,7 @@
 ---
 title: Knowledge Overview
 view_type: knowledge_overview
-generated_at: 2026-05-01T08:48:21.963Z
+generated_at: 2026-05-18T16:09:51.217Z
 claim_count: 15
 verified_claim_count: 3
 inferred_claim_count: 12

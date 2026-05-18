@@ -1,13 +1,13 @@
 ---
 title: Impact Inventory
 view_type: code_topic
-generated_at: 2026-05-01T08:48:21.111Z
+generated_at: 2026-05-18T16:09:50.859Z
 claim_count: 20
 verified_claim_count: 20
 inferred_claim_count: 0
 stale_claim_count: 0
 conflict_count: 4
-source_snapshot_count: 96
+source_snapshot_count: 104
 ---
 
 # Impact Inventory
