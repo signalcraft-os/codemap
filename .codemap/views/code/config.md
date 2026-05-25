@@ -1,7 +1,7 @@
 ---
 title: Config Inventory
 view_type: code_topic
-generated_at: 2026-05-18T16:09:50.859Z
+generated_at: 2026-05-25T16:09:14.890Z
 claim_count: 5
 verified_claim_count: 2
 inferred_claim_count: 3
