@@ -1,10 +1,11 @@
 # codesight — AI Context Map
 
 > **Stack:** raw-http | none | unknown | typescript
+> **Monorepo:** 
 
 > 4 routes (8 inferred) + 1 graphql + 3 ws | 0 models | 0 components | 84 lib files | 9 env vars | 7 middleware | 6 events | 60% test coverage
 > **Token savings:** this file is ~7,000 tokens. Without it, AI exploration would cost ~38,200 tokens. **Saves ~31,200 tokens per conversation.**
-> **Last scanned:** 2026-05-01 08:48 — re-run after significant changes
+> **Last scanned:** 2026-06-22 16:05 — re-run after significant changes
 
 ---
 

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "domain": "knowledge",
-  "generatedAt": "2026-05-25T16:09:15.460Z",
+  "generatedAt": "2026-06-22T16:05:18.505Z",
   "trigger": "cli",
   "outputDirName": ".codesight",
   "changedFiles": [],
