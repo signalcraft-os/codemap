@@ -1,7 +1,7 @@
 ---
 title: Route Inventory
 view_type: code_topic
-generated_at: 2026-06-22T16:05:17.901Z
+generated_at: 2026-06-29T16:06:49.869Z
 claim_count: 8
 verified_claim_count: 0
 inferred_claim_count: 8

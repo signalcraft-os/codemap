@@ -1,7 +1,7 @@
 {
   "version": 1,
   "domain": "knowledge",
-  "generatedAt": "2026-06-22T16:05:18.505Z",
+  "generatedAt": "2026-06-29T16:06:50.438Z",
   "trigger": "cli",
   "outputDirName": ".codesight",
   "changedFiles": [],
@@ -41,7 +41,7 @@
     "code": {
       "version": 1,
       "domain": "code",
-      "generatedAt": "2026-06-22T16:05:17.901Z",
+      "generatedAt": "2026-06-29T16:06:49.869Z",
       "trigger": "cli",
       "outputDirName": ".codesight",
       "changedFiles": [],
@@ -99,7 +99,7 @@
     "knowledge": {
       "version": 1,
       "domain": "knowledge",
-      "generatedAt": "2026-06-22T16:05:18.505Z",
+      "generatedAt": "2026-06-29T16:06:50.438Z",
       "trigger": "cli",
       "outputDirName": ".codesight",
       "changedFiles": [],

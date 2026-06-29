@@ -1,630 +1,630 @@
 {
   "version": "1",
-  "generatedAt": "2026-06-22T16:05:18.500Z",
+  "generatedAt": "2026-06-29T16:06:50.433Z",
   "entries": [
     {
       "snapshotId": "snapshot:92e5e4154c83b8f316fe79fd0b17236e3fdaf9bf4ced4d345060149d466c99ed",
       "sourcePath": "AGENTS.md",
       "contentHash": "bfd89f7e502fd5158be5c01121069185fa0fcb04d7656f1ce9707275ca82dd12",
-      "createdAt": "2026-06-22T16:05:18.496Z"
+      "createdAt": "2026-06-29T16:06:50.430Z"
     },
     {
       "snapshotId": "snapshot:9e751335bd6b818e9b6bf7251cfc11b8afe29451f6545c79e869e673c4c5b906",
       "sourcePath": "assets/claude-md-codemap-section.md",
       "contentHash": "ed602966be247f96b0563f0dd4f7af72fc27a5844aa1608e29ef644f45c19ab0",
-      "createdAt": "2026-06-22T16:05:18.497Z"
+      "createdAt": "2026-06-29T16:06:50.431Z"
     },
     {
       "snapshotId": "snapshot:39bc08c8e11b6d65b5c78a82c0ba4c7ff43a4685b44bca5e3ba0a0b40ccc338c",
       "sourcePath": "docs/codemap-architecture.md",
       "contentHash": "47eef45ae8a3bc8893ba703c87d751327ac6c6aa17d2dd73e73fbdb695002773",
-      "createdAt": "2026-06-22T16:05:18.498Z"
+      "createdAt": "2026-06-29T16:06:50.431Z"
     },
     {
       "snapshotId": "snapshot:81d328c33f60372ddbb4f7998bd89886ea5b0a3325c8059e43fa3511511c1190",
       "sourcePath": "docs/codemap-beta-tester-setup.md",
       "contentHash": "1ce046ad2e40cf8183d54b8c869df9a9db6321da9b5aa47fff547fd6413524a6",
-      "createdAt": "2026-06-22T16:05:18.499Z"
+      "createdAt": "2026-06-29T16:06:50.432Z"
     },
     {
       "snapshotId": "snapshot:627e4766569157c2ac2c56f74d666127045d4f1ab1d2dd0569a2f79cd3632218",
       "sourcePath": "docs/codemap-handoff.md",
       "contentHash": "9f38caf4bc27aa4e17d0c761f22a21900d8d7e74f0bc9cee46227f69284073b1",
-      "createdAt": "2026-06-22T16:05:18.499Z"
+      "createdAt": "2026-06-29T16:06:50.432Z"
     },
     {
       "snapshotId": "snapshot:29459bfe5a0d0e9ef40d9f1302969baefd36c56f963f3dab029bfb01d41cd52c",
       "sourcePath": "docs/codemap-quickstart.md",
       "contentHash": "c04a9ef38a122a9ca7500e82d07501eee221f768102a4f248839cb22ae42b422",
-      "createdAt": "2026-06-22T16:05:18.500Z"
+      "createdAt": "2026-06-29T16:06:50.432Z"
     },
     {
       "snapshotId": "snapshot:84b84bab7295dbf23dd3752232bb645d2337e934bba37190b17c1eed46102fde",
       "sourcePath": "eval/README.md",
       "contentHash": "d1b012ce339f2d00c804c41462a0ecf22cecd0c1ebf8ed14b07c851288ebbd26",
-      "createdAt": "2026-06-22T16:05:18.500Z"
+      "createdAt": "2026-06-29T16:06:50.433Z"
     },
     {
       "snapshotId": "snapshot:cf6660544da4435f7b21ca6554ef92eca4d29fafcded6724eecfefe680eb9544",
       "sourcePath": "package.json",
       "contentHash": "75aaa3b45726daaef46258b25acd2bd8906e9c0b14a59d292184734829be0ffb",
-      "createdAt": "2026-06-22T16:05:17.742Z"
+      "createdAt": "2026-06-29T16:06:49.734Z"
     },
     {
       "snapshotId": "snapshot:90c2dedf54bfc794596d4cfae155915503f4a1362d9743743bb023ce02eab4b2",
       "sourcePath": "README.md",
       "contentHash": "7ef1dba92aa3e26c66be4024c77eedf1b3bd1a8d435eef3885fb72a584077e77",
-      "createdAt": "2026-06-22T16:05:18.497Z"
+      "createdAt": "2026-06-29T16:06:50.431Z"
     },
     {
       "snapshotId": "snapshot:24b18bb1e48e59ac88981e54e6c7b8ae97b0e58afb1e5270fc6ef876ef7be2af",
       "sourcePath": "src/ast/extract-android.ts",
       "contentHash": "a44cbca1edf4773a9e12638b603952e7d20a83964e192470c3365fa3d0b2577d",
-      "createdAt": "2026-06-22T16:05:17.744Z"
+      "createdAt": "2026-06-29T16:06:49.736Z"
     },
     {
       "snapshotId": "snapshot:50597d69b051bd07a7711f4bf9d66b528f0a785d5a558b93a234ab41b6d54908",
       "sourcePath": "src/ast/extract-brighterscript.ts",
       "contentHash": "7084b7b28abfdf34c55ae164902ba25749e837383f7cd4db5bf2dc6a4d1a01df",
-      "createdAt": "2026-06-22T16:05:17.745Z"
+      "createdAt": "2026-06-29T16:06:49.736Z"
     },
     {
       "snapshotId": "snapshot:4e7ee915ffbb60fb1d9939abc0bbc7837dcd06389b7f2789b3ae8c83b5efa581",
       "sourcePath": "src/ast/extract-brightscript.ts",
       "contentHash": "0dbbd9d4ae39662599d59eb3a727a7a30e6cfb1ca421a85a550df5680864c9ea",
-      "createdAt": "2026-06-22T16:05:17.800Z"
+      "createdAt": "2026-06-29T16:06:49.802Z"
     },
     {
       "snapshotId": "snapshot:14220c255b38dea03c196e5f0a7e76d62dd365c13fd3fc265bbea8f58c22e2df",
       "sourcePath": "src/ast/extract-components.ts",
       "contentHash": "c1bf0e3346baea7b89939356074db7073b02612afbd6dfe10b74cdfbaa35647f",
-      "createdAt": "2026-06-22T16:05:17.745Z"
+      "createdAt": "2026-06-29T16:06:49.737Z"
     },
     {
       "snapshotId": "snapshot:65d1bbad807f45e879dc4e4b2a642108fe6d9944475461ba3f420e1caa3db6e8",
       "sourcePath": "src/ast/extract-csharp.ts",
       "contentHash": "ad577b166141e82d05de8b7127209acbb3c0de7247a276aee8450d7e76202a83",
-      "createdAt": "2026-06-22T16:05:17.746Z"
+      "createdAt": "2026-06-29T16:06:49.738Z"
     },
     {
       "snapshotId": "snapshot:528d7a2da54497dc599aeb48677a9aae19da931dbd09d83866f77d695e26f71e",
       "sourcePath": "src/ast/extract-dart.ts",
       "contentHash": "512067b6d8598fc759e8157c9702ee2ef376faf400182af5394a4f62ae554078",
-      "createdAt": "2026-06-22T16:05:17.746Z"
+      "createdAt": "2026-06-29T16:06:49.738Z"
     },
     {
       "snapshotId": "snapshot:65ed9c6785e467c3713463cc2f4e07b3b59ce42595a3063e470d84849f1f5bfd",
       "sourcePath": "src/ast/extract-go.ts",
       "contentHash": "8269df9a8a1ed7fb00a46a5a379a35ff8ead376f3c3baf7406390c03f9eeff9b",
-      "createdAt": "2026-06-22T16:05:17.747Z"
+      "createdAt": "2026-06-29T16:06:49.738Z"
     },
     {
       "snapshotId": "snapshot:50f5bed7f5cbd6230d493c66d4698c695c8ebca49fb7f2468feec1fe2c05e95d",
       "sourcePath": "src/ast/extract-php.ts",
       "contentHash": "16cd3ea60473e80454768c203fbdb15e03c55554e4b8bbe2096b8675fa8da974",
-      "createdAt": "2026-06-22T16:05:17.747Z"
+      "createdAt": "2026-06-29T16:06:49.738Z"
     },
     {
       "snapshotId": "snapshot:0bc9a7a1eb71fce198dc5b3f0c39f25d181d4a627ba5f3ca282f64fefee6677c",
       "sourcePath": "src/ast/extract-python.ts",
       "contentHash": "0a2ae1f9c32e2cad07ade9986650e3ef7548ced70889d6f111e245de2255f8e5",
-      "createdAt": "2026-06-22T16:05:17.748Z"
+      "createdAt": "2026-06-29T16:06:49.739Z"
     },
     {
       "snapshotId": "snapshot:56cc56da335aa0fb22ebb058fa7744d5e42fc5dfc09c3c0252f7842513897d29",
       "sourcePath": "src/ast/extract-routes.ts",
       "contentHash": "0da507246f071fddfc8e32ce9b0c425c3e98e1d4b1eaede7f61f649b1d02f72e",
-      "createdAt": "2026-06-22T16:05:17.748Z"
+      "createdAt": "2026-06-29T16:06:49.739Z"
     },
     {
       "snapshotId": "snapshot:c89b12c32fc2aeba7229fbe8244afa9eca5415c66758e4f47957ef627fcaa33f",
       "sourcePath": "src/ast/extract-scenegraph.ts",
       "contentHash": "5bd91b2b607fcb7ef7a56fd3c2cf506deb09a2e7ac1cc3b92ccc27ee9ba68e3b",
-      "createdAt": "2026-06-22T16:05:17.749Z"
+      "createdAt": "2026-06-29T16:06:49.740Z"
     },
     {
       "snapshotId": "snapshot:9e848928fdb43fddda813f17298ef43703c8dc135d1b997feb44178617faa6ee",
       "sourcePath": "src/ast/extract-schema.ts",
       "contentHash": "18ab3f61b99b1e2e81332a3329982d44679383c609f933bdc13f7151322ae3c8",
-      "createdAt": "2026-06-22T16:05:17.749Z"
+      "createdAt": "2026-06-29T16:06:49.740Z"
     },
     {
       "snapshotId": "snapshot:b82d37f5a83304b85b05d3bc1e0b35f741505637529df9b679ff0f24512a30db",
       "sourcePath": "src/ast/extract-swift.ts",
       "contentHash": "b34bab546c6c19c66dc5a047752a9e3afb9bf85fa7ac0d410fa523e8f77e848c",
-      "createdAt": "2026-06-22T16:05:17.749Z"
+      "createdAt": "2026-06-29T16:06:49.740Z"
     },
     {
       "snapshotId": "snapshot:c3bac544cf5b57532c2ee037cd049c3fc68538037a51985dce9505ab9deb9e56",
       "sourcePath": "src/ast/loader.ts",
       "contentHash": "267845e596703cd9d2db1ae2162b394b82ecc83c83a8c7b66f33ffe58f633080",
-      "createdAt": "2026-06-22T16:05:17.799Z"
+      "createdAt": "2026-06-29T16:06:49.802Z"
     },
     {
       "snapshotId": "snapshot:b0fbfd2acf2606b512a8c7a31f0dcef7d52e8eaef11a5bf22095b6464ff4961c",
       "sourcePath": "src/codemap/extract/code/components.ts",
       "contentHash": "6efb0bbfbb37ec88f7ab2512e8d740e17555f52ad9ec0a39a266fe18cb77df4e",
-      "createdAt": "2026-06-22T16:05:17.750Z"
+      "createdAt": "2026-06-29T16:06:49.741Z"
     },
     {
       "snapshotId": "snapshot:c689cebdc34700629983bdc48e26d65166c99003d7af19850d2917548eb51ff4",
       "sourcePath": "src/codemap/extract/code/config.ts",
       "contentHash": "c362cba380cb27496a46cdbf0682688f15de6f763615c2b3f26385047789dcdd",
-      "createdAt": "2026-06-22T16:05:17.750Z"
+      "createdAt": "2026-06-29T16:06:49.741Z"
     },
     {
       "snapshotId": "snapshot:f10ffe898f212a04dfc9d2b1910d90f94f19f2667d43cab99bdb703d0d5f5718",
       "sourcePath": "src/codemap/extract/code/env.ts",
       "contentHash": "c856df379a172afc57fe3602881616023bbcbd83f7b95ee8a045775914d575f3",
-      "createdAt": "2026-06-22T16:05:17.751Z"
+      "createdAt": "2026-06-29T16:06:49.741Z"
     },
     {
       "snapshotId": "snapshot:e175e749a8eb2e631862d1c2589dd36bf831fcb83f907d13f3e018d8be91f1fb",
       "sourcePath": "src/codemap/extract/code/hotspots.ts",
       "contentHash": "2df82dc9a4b56ceb06f0e855b0f055597dd6af57e5972019d5aa6a7fac545124",
-      "createdAt": "2026-06-22T16:05:17.751Z"
+      "createdAt": "2026-06-29T16:06:49.742Z"
     },
     {
       "snapshotId": "snapshot:0758a384e5ecf40568210ad76bf6197a433b29a21fabd44946c6f35abc7725d3",
       "sourcePath": "src/codemap/extract/code/libs.ts",
       "contentHash": "6cb751afefe48e651ea6a0cfe05681d266ef3d3a3a8f8fb0e36674cfe94a3957",
-      "createdAt": "2026-06-22T16:05:17.751Z"
+      "createdAt": "2026-06-29T16:06:49.742Z"
     },
     {
       "snapshotId": "snapshot:cc3929e46c9f76baa87e187068eccd8ad23b8f878540e4210542c548bd3f5cc5",
       "sourcePath": "src/codemap/extract/code/middleware.ts",
       "contentHash": "79565136809a6d48923819d5a3bda9d6967a1d84abe5d3d1f9361b9dfa694ae9",
-      "createdAt": "2026-06-22T16:05:17.806Z"
+      "createdAt": "2026-06-29T16:06:49.806Z"
     },
     {
       "snapshotId": "snapshot:4c4aa853f8a9e3635ea45f3798538010954a61ad0195793a3292cbac170c5f9c",
       "sourcePath": "src/codemap/extract/code/routes.ts",
       "contentHash": "e2a9d43135a818fc9175ebb11596840eeed4dfa79d72db030a6166635b6284b0",
-      "createdAt": "2026-06-22T16:05:17.752Z"
+      "createdAt": "2026-06-29T16:06:49.742Z"
     },
     {
       "snapshotId": "snapshot:63d728027116c88c787319fb3939e9274dae73f4a4f5f0c44161c6545e76b567",
       "sourcePath": "src/codemap/extract/code/schemas.ts",
       "contentHash": "532c113a8eed969502e304b9249158a966ecb6bd901fa007af43e5f9e596ddc1",
-      "createdAt": "2026-06-22T16:05:17.752Z"
+      "createdAt": "2026-06-29T16:06:49.742Z"
     },
     {
       "snapshotId": "snapshot:e950f1fa65822e29409e83564c56bd44f01e2e10f62ba3dd60dba7a106743c06",
       "sourcePath": "src/codemap/extract/code/source-path-filter.ts",
       "contentHash": "3fb1eed68a1200ca4fb5575f897046d3f59c7b7c935383b72947caf62539f220",
-      "createdAt": "2026-06-22T16:05:17.798Z"
+      "createdAt": "2026-06-29T16:06:49.801Z"
     },
     {
       "snapshotId": "snapshot:a2c7db7663c04da78ab55ae4fd13a5e9d5621f9ac0e76b2bd260948c3fdfd0a7",
       "sourcePath": "src/codemap/extract/knowledge/notes.ts",
       "contentHash": "4fecec57a271c6644fb678e2130a3a32de369340559d42e98ad0912456d667a0",
-      "createdAt": "2026-06-22T16:05:17.753Z"
+      "createdAt": "2026-06-29T16:06:49.743Z"
     },
     {
       "snapshotId": "snapshot:d31a3ff0db1f6eba6aabc462098d85411ce08dcc6b307a3f1a2cd78c6a6d08fc",
       "sourcePath": "src/codemap/history/index.ts",
       "contentHash": "e95d47353f4827a8b3c4d7f4b60dd4bf81b22d92af92d088f77cf010242f41da",
-      "createdAt": "2026-06-22T16:05:17.754Z"
+      "createdAt": "2026-06-29T16:06:49.743Z"
     },
     {
       "snapshotId": "snapshot:1faf71561e5819e6212d80a7820f43bcdbf8fcfcb92a0dd67ade1437162bc4d4",
       "sourcePath": "src/codemap/history/policy.ts",
       "contentHash": "0240b11b226d2276b5d0ecfcb64106becc5354ac634e607bae3900daa418e93f",
-      "createdAt": "2026-06-22T16:05:17.754Z"
+      "createdAt": "2026-06-29T16:06:49.744Z"
     },
     {
       "snapshotId": "snapshot:84acf2d155d91d19f4c1e1a8a347ba256107ef0f073fcdd8e927098210d78deb",
       "sourcePath": "src/codemap/install/index.ts",
       "contentHash": "c98d2e814302a69ebcec39a3b55d2c412f8f9d2666b9e49d25f8ec62fe84e426",
-      "createdAt": "2026-06-22T16:05:17.754Z"
+      "createdAt": "2026-06-29T16:06:49.744Z"
     },
     {
       "snapshotId": "snapshot:33be5b33af9e3e19870849fb7b7593b2f0db56782a47f148ee90fffaf8c49887",
       "sourcePath": "src/codemap/mcp/index.ts",
       "contentHash": "844ea0e1f56e65f118a4ae5464ba2d7d6104837c58a0393d7d2ca263753d6b1c",
-      "createdAt": "2026-06-22T16:05:17.755Z"
+      "createdAt": "2026-06-29T16:06:49.745Z"
     },
     {
       "snapshotId": "snapshot:66694eb205a00ac5c83719fcc826e7a53696ee8bb8aa56b7875910443cdd7481",
       "sourcePath": "src/codemap/migration/compatibility-parity.ts",
       "contentHash": "7b3bf4766d87bdb0cf4528ea9fbb90a0700a5524ad05c72797ce990a7eaf4787",
-      "createdAt": "2026-06-22T16:05:17.755Z"
+      "createdAt": "2026-06-29T16:06:49.745Z"
     },
     {
       "snapshotId": "snapshot:5243015c39c2d817946fbcf976400162f69e621c41cd2b8d373f36bb461c13b2",
       "sourcePath": "src/codemap/model/ids.ts",
       "contentHash": "c501e88d82ce8b15d6427e5a463a272b3b4d47f717375f6868e19399210b30fe",
-      "createdAt": "2026-06-22T16:05:17.797Z"
+      "createdAt": "2026-06-29T16:06:49.799Z"
     },
     {
       "snapshotId": "snapshot:2ab5ce2dd49659af5f8f62f100898e8803f3a5c5166281482352182e6f939b10",
       "sourcePath": "src/codemap/model/layout.ts",
       "contentHash": "edc6a66b69dd01799862ccb59d7fa98bea5cda720a09f7826c5f3083c9c14743",
-      "createdAt": "2026-06-22T16:05:17.797Z"
+      "createdAt": "2026-06-29T16:06:49.799Z"
     },
     {
       "snapshotId": "snapshot:1faa00a98471dbc8fbca31091a6d147709dd1a94df9ed54449043ed60c8b0b0c",
       "sourcePath": "src/codemap/model/types.ts",
       "contentHash": "c07d9f508cf5c30afec79dbd1df55a731ce9e04b2b566516c2b91d6b06b212b7",
-      "createdAt": "2026-06-22T16:05:17.796Z"
+      "createdAt": "2026-06-29T16:06:49.798Z"
     },
     {
       "snapshotId": "snapshot:03b25dd3b916ee5dcd70eabf74b005a255fd30d060fe6de24ef48ac8a0fd7345",
       "sourcePath": "src/codemap/notes/record-decision.ts",
       "contentHash": "eca78e837e2a45ab7e1b69e2c94da5ad9248bf883b1cc8a4a4ecd5f27978d35b",
-      "createdAt": "2026-06-22T16:05:17.804Z"
+      "createdAt": "2026-06-29T16:06:49.804Z"
     },
     {
       "snapshotId": "snapshot:6f540ffbfe59c970eb2451e5e7a8d18660e4985da14fc7ecd036530e0fc2f8b9",
       "sourcePath": "src/codemap/publish/claim-health-incidents.ts",
       "contentHash": "b100deaa1af1159f9b014e31f87f55bb05509ca4427a2e0e67478eda1e3ca237",
-      "createdAt": "2026-06-22T16:05:17.757Z"
+      "createdAt": "2026-06-29T16:06:49.746Z"
     },
     {
       "snapshotId": "snapshot:763a1790544f5009becd7bc4082629a47065ae48cd660ec7bb7e3a6096124485",
       "sourcePath": "src/codemap/publish/code-pipeline.ts",
       "contentHash": "b433101b07a863b38cc146eaa3da266fa294afd5b5a22e85d5b13ccbacc5fcc5",
-      "createdAt": "2026-06-22T16:05:17.799Z"
+      "createdAt": "2026-06-29T16:06:49.801Z"
     },
     {
       "snapshotId": "snapshot:5abe9de879f59fde4df84e7fe3d1f2ecb1f0f33e75014aaeb93958b20ab08c26",
       "sourcePath": "src/codemap/publish/knowledge-pipeline.ts",
       "contentHash": "8e5015947c6581d6aeb8318bc00ee22a0685f4ab3978c16642d0fddf932d1542",
-      "createdAt": "2026-06-22T16:05:17.802Z"
+      "createdAt": "2026-06-29T16:06:49.802Z"
     },
     {
       "snapshotId": "snapshot:38c48007155372412798d417cbfce1f87a7cbcf57dcc4c89917d4dc22aed86f3",
       "sourcePath": "src/codemap/publish/plans.ts",
       "contentHash": "85c705b5275d2f6ff16a17b898af2d16b582746792cadf0d09fee06b06dd16dd",
-      "createdAt": "2026-06-22T16:05:17.803Z"
+      "createdAt": "2026-06-29T16:06:49.803Z"
     },
     {
       "snapshotId": "snapshot:d6475342ee93ed95ee9bf4ee78edaeba45894a1b914f804323a50528447e81d8",
       "sourcePath": "src/codemap/runtime/index.ts",
       "contentHash": "424fde4a07fda3c28590a73df758826a6936e0a8689f0241c12340dd74d29fd9",
-      "createdAt": "2026-06-22T16:05:17.758Z"
+      "createdAt": "2026-06-29T16:06:49.750Z"
     },
     {
       "snapshotId": "snapshot:dca314d5d69716286359c627dec40f38c20825f8b3f2081b68e12a600bdc3dbe",
       "sourcePath": "src/codemap/snapshot/manifest.ts",
       "contentHash": "86c265444bbeabb85fdb443ebc40543e14102be570a81c3df5af3dc91f117c92",
-      "createdAt": "2026-06-22T16:05:17.758Z"
+      "createdAt": "2026-06-29T16:06:49.750Z"
     },
     {
       "snapshotId": "snapshot:888ce128946850b6acd64e550608a58163d87e5f9e4bf257e277350bc583ed94",
       "sourcePath": "src/codemap/snapshot/snapshotter.ts",
       "contentHash": "7663f6c98b6e0daa0ad68e8a4367dad40e77e3173913a39c181a4d357eca4e7c",
-      "createdAt": "2026-06-22T16:05:17.797Z"
+      "createdAt": "2026-06-29T16:06:49.799Z"
     },
     {
       "snapshotId": "snapshot:40de3530d9be6adf9175f6a19f275d599e952925d6aca670384487db71e79115",
       "sourcePath": "src/codemap/store/claims-store.ts",
       "contentHash": "0545fb57f2918b92d36cb601da03484660ae1988446162855ae39d239dfceabf",
-      "createdAt": "2026-06-22T16:05:17.803Z"
+      "createdAt": "2026-06-29T16:06:49.803Z"
     },
     {
       "snapshotId": "snapshot:a20aab195e8bd2031c6703fbef075e323c2f5fee060bbf9478b372f9fdd98f7e",
       "sourcePath": "src/codemap/store/conflict-store.ts",
       "contentHash": "a9c5e91e3d724432cf718998b69d16ae936d8044fd9d0863e6e25b285511ff69",
-      "createdAt": "2026-06-22T16:05:17.803Z"
+      "createdAt": "2026-06-29T16:06:49.803Z"
     },
     {
       "snapshotId": "snapshot:a28436e1232405f2cb4dbc7a1572a982629581f31425c18d1be65805ca64335e",
       "sourcePath": "src/codemap/store/evidence-store.ts",
       "contentHash": "8aee8b6a642408b31acdbf931d1c458412e0cfd879dace33851a2da1c7fd7858",
-      "createdAt": "2026-06-22T16:05:17.804Z"
+      "createdAt": "2026-06-29T16:06:49.803Z"
     },
     {
       "snapshotId": "snapshot:6616f808b074bc4cf9283b37d6ff1d5d7bff65ef35621dfa06440b104e0fdcae",
       "sourcePath": "src/codemap/store/fs.ts",
       "contentHash": "bbd064e42dd23adc189bbd03d406a6986914609a713a11d8c73a5583f28cd1a3",
-      "createdAt": "2026-06-22T16:05:17.799Z"
+      "createdAt": "2026-06-29T16:06:49.801Z"
     },
     {
       "snapshotId": "snapshot:d6bb425a092097ebf7565d288882c29901f62d975b6f2955f8150110e2379ff2",
       "sourcePath": "src/codemap/store/index.ts",
       "contentHash": "538b49ce0b2576acea1b2e30cf0f08e465af6d4f2ac560f05053b291d3465164",
-      "createdAt": "2026-06-22T16:05:17.800Z"
+      "createdAt": "2026-06-29T16:06:49.802Z"
     },
     {
       "snapshotId": "snapshot:d51f4f5f9b44dd27ed2f8d3b4c1aa53a3f2c8ff108397e17395a2504256e412b",
       "sourcePath": "src/codemap/store/snapshots-store.ts",
       "contentHash": "c0c14d55b1da86994e0a4deb9ec986b0f0de02ec6057f814118af3fe1e681910",
-      "createdAt": "2026-06-22T16:05:17.804Z"
+      "createdAt": "2026-06-29T16:06:49.804Z"
     },
     {
       "snapshotId": "snapshot:42afd95c8c95acff029761d3ce33d33699d1378639272d00ceff7cb13f255b0e",
       "sourcePath": "src/codemap/store/verification-store.ts",
       "contentHash": "3630851ceee6c798b5417a28281c259dcd6dbfc29d65f295f1618a3240a29fb6",
-      "createdAt": "2026-06-22T16:05:17.804Z"
+      "createdAt": "2026-06-29T16:06:49.804Z"
     },
     {
       "snapshotId": "snapshot:1d5cf09600d1210cc41957df2ac3b0062a8f6b1de3845af9af32874562380536",
       "sourcePath": "src/codemap/telemetry/index.ts",
       "contentHash": "571adf3b6afa968fb391fa376f3f56aedd33c5fc25a913ea3636dcf3e3d52ddb",
-      "createdAt": "2026-06-22T16:05:17.760Z"
+      "createdAt": "2026-06-29T16:06:49.752Z"
     },
     {
       "snapshotId": "snapshot:2f8ca9441a6e0ea969e316662e3b8aeec1e5af45724714402581252483d42505",
       "sourcePath": "src/codemap/verify/verify-component.ts",
       "contentHash": "796002d78223b2a17e0fe65426396485d90156761a1120d98406536c74aedbab",
-      "createdAt": "2026-06-22T16:05:17.761Z"
+      "createdAt": "2026-06-29T16:06:49.752Z"
     },
     {
       "snapshotId": "snapshot:ee8b0f10b1f2d035e244a329648fa86937be755b1c32d8dcbc0685ff621a306e",
       "sourcePath": "src/codemap/verify/verify-config.ts",
       "contentHash": "24b379d98a5868ea754c3641318b5fc74acdbb2e88c7996d0c762b333712002e",
-      "createdAt": "2026-06-22T16:05:17.761Z"
+      "createdAt": "2026-06-29T16:06:49.752Z"
     },
     {
       "snapshotId": "snapshot:5048dfa14862bda6c75872ccda3df31dc63dbabc55cf4f2d04f143249a0e1c76",
       "sourcePath": "src/codemap/verify/verify-env.ts",
       "contentHash": "e43bae38aea58447e277363b0942f9719755bddbdd849f479d391c5d72f56efb",
-      "createdAt": "2026-06-22T16:05:17.761Z"
+      "createdAt": "2026-06-29T16:06:49.752Z"
     },
     {
       "snapshotId": "snapshot:db4d33a87cc1a146a42711a91849d690a335ba3b2d1387d1412fe4ea8430a18a",
       "sourcePath": "src/codemap/verify/verify-hotspot.ts",
       "contentHash": "fe45adbecac7f23b607ae2359e0119faeaf09bb9b9ddda91a60482dbc04077ab",
-      "createdAt": "2026-06-22T16:05:17.762Z"
+      "createdAt": "2026-06-29T16:06:49.752Z"
     },
     {
       "snapshotId": "snapshot:6431c504a3dca5cb3e9ea83e67398b5a83bc602b561eb9a6c9377713a4300911",
       "sourcePath": "src/codemap/verify/verify-knowledge.ts",
       "contentHash": "06a2dade87389e3bccf7308054cce7970c159132939ce9928cd3336cf0f3c314",
-      "createdAt": "2026-06-22T16:05:17.762Z"
+      "createdAt": "2026-06-29T16:06:49.753Z"
     },
     {
       "snapshotId": "snapshot:cac7af40118097bca5a8c288336a488aefb0d885c98480fdbbaee2e5ad606bbc",
       "sourcePath": "src/codemap/verify/verify-library.ts",
       "contentHash": "6df8560eb949e635ac2b2b58f219f857d5c526b8ffa446ecac0ba3813b424540",
-      "createdAt": "2026-06-22T16:05:17.762Z"
+      "createdAt": "2026-06-29T16:06:49.753Z"
     },
     {
       "snapshotId": "snapshot:acd447329ef8b45fe8fd8edf6bb91b741fd43027779b7a8ac0e664d71516dbb0",
       "sourcePath": "src/codemap/verify/verify-middleware.ts",
       "contentHash": "5c22c14fe53ed18b2cc53866210f9a36223bbd501ad55bb61ed643823c041e52",
-      "createdAt": "2026-06-22T16:05:17.807Z"
+      "createdAt": "2026-06-29T16:06:49.807Z"
     },
     {
       "snapshotId": "snapshot:a683590eabb1034263a01997365bd4059171cdc3850ba1b530f9fcaad1dda14a",
       "sourcePath": "src/codemap/verify/verify-route.ts",
       "contentHash": "caa2e7884b095e666cbad098feb801b078cc4ce2537a206726047eeb6d6af20a",
-      "createdAt": "2026-06-22T16:05:17.765Z"
+      "createdAt": "2026-06-29T16:06:49.753Z"
     },
     {
       "snapshotId": "snapshot:311f5817eb31e4454822ab68f8965ca933220ed38ead8af8f23621cf62645fd5",
       "sourcePath": "src/codemap/verify/verify-schema.ts",
       "contentHash": "c18e4080e5fe23c2fb3c9f590aafb04081e9a4f50cfafb8288b9043486eeec99",
-      "createdAt": "2026-06-22T16:05:17.765Z"
+      "createdAt": "2026-06-29T16:06:49.754Z"
     },
     {
       "snapshotId": "snapshot:647f67e4ed966efaf660747010baa05c4f63acda7d16385c9fdf678d27210bad",
       "sourcePath": "src/config.ts",
       "contentHash": "32478fa3c6e9d79c14bee67f6c5533e934fb744b8737f5b777225b6207497fc7",
-      "createdAt": "2026-06-22T16:05:17.765Z"
+      "createdAt": "2026-06-29T16:06:49.754Z"
     },
     {
       "snapshotId": "snapshot:2296458cee3171ea1d0e2bd396779b3f5c2da3dc42eb8b5678858a4221651d4b",
       "sourcePath": "src/core.ts",
       "contentHash": "1b80f9d2ae010b51307eeaf244d918bdef6f223faedd006f3e6b07e99c7620f1",
-      "createdAt": "2026-06-22T16:05:17.766Z"
+      "createdAt": "2026-06-29T16:06:49.754Z"
     },
     {
       "snapshotId": "snapshot:179c217848e2da5905689e23bce66ef6d161093599f2a40fda0902b5b6425045",
       "sourcePath": "src/detectors/blast-radius.ts",
       "contentHash": "da7e550db70d601a3b907d0338aaed955dc16246e272e363e22daccb4c100fbb",
-      "createdAt": "2026-06-22T16:05:17.766Z"
+      "createdAt": "2026-06-29T16:06:49.754Z"
     },
     {
       "snapshotId": "snapshot:332d271ec44c92e6e1af65d77cf0fa87913d1847f0a2105e357bc6ada5780ee1",
       "sourcePath": "src/detectors/components.ts",
       "contentHash": "29a4d6d3e658a84154cab325e269729b92ce04f8472d76a18795e8cc82663d6f",
-      "createdAt": "2026-06-22T16:05:17.767Z"
+      "createdAt": "2026-06-29T16:06:49.754Z"
     },
     {
       "snapshotId": "snapshot:1e5870cc6f9180b946ae0b76a09e90ad962eac6ad343e537d7df45281f0730ef",
       "sourcePath": "src/detectors/config.ts",
       "contentHash": "4e2372aa7a330beba109649e57d85a3d2def41c34e9d806aaf95700d1313cc4e",
-      "createdAt": "2026-06-22T16:05:17.790Z"
+      "createdAt": "2026-06-29T16:06:49.775Z"
     },
     {
       "snapshotId": "snapshot:7442b5a75d0e06e72d1528d18d331a448a0592ff9946dad101fdfdee22a44b8d",
       "sourcePath": "src/detectors/contracts.ts",
       "contentHash": "6a114ff02d72a88e38c50b21f9d2afdaf08475b88ff45a15eca5079ede66a61a",
-      "createdAt": "2026-06-22T16:05:17.767Z"
+      "createdAt": "2026-06-29T16:06:49.755Z"
     },
     {
       "snapshotId": "snapshot:8c36763e1ac12d02120b24a326e77fb4a58f0b42020f65b7aa0729a819aa6e81",
       "sourcePath": "src/detectors/coverage.ts",
       "contentHash": "e6f9589d8a46213b4d45e5a82f61b8b2cb89d0ccf6c02da5e4f9845f1e76a6f0",
-      "createdAt": "2026-06-22T16:05:17.768Z"
+      "createdAt": "2026-06-29T16:06:49.755Z"
     },
     {
       "snapshotId": "snapshot:23e86b068e0f9062146919c499cbecb9c5558a53fb2dd91a83a31722890c0237",
       "sourcePath": "src/detectors/events.ts",
       "contentHash": "d69e561683d374b984df5e5e76befbeefef3bc027e30c80cea23534fdfb7cd6e",
-      "createdAt": "2026-06-22T16:05:17.768Z"
+      "createdAt": "2026-06-29T16:06:49.755Z"
     },
     {
       "snapshotId": "snapshot:c2815a6f9247e50e72ac7c52caf3cd7431ca48d531c476a7ca519952d535e6aa",
       "sourcePath": "src/detectors/graph.ts",
       "contentHash": "aeb816cc32c67cd3ad21b0d4f8d5d440c1994b2de23ca27cbdecb816cc873066",
-      "createdAt": "2026-06-22T16:05:17.768Z"
+      "createdAt": "2026-06-29T16:06:49.756Z"
     },
     {
       "snapshotId": "snapshot:c3a2053b2f6bcfe8ef6be60acf78aa7264864346938be36b5dd95516304d9d17",
       "sourcePath": "src/detectors/graphql.ts",
       "contentHash": "73c87b9bf5021d3eaf921ea418e8078647b999f3522887a0cbaaa9cb4a2bd512",
-      "createdAt": "2026-06-22T16:05:17.769Z"
+      "createdAt": "2026-06-29T16:06:49.756Z"
     },
     {
       "snapshotId": "snapshot:6ea17e09e898e8f04f1690e3dbd343943668f84d54007d19349711280717b4d2",
       "sourcePath": "src/detectors/knowledge.ts",
       "contentHash": "aa61c9ebe5294d34031cc40520795ac150ca33e21ef3bf457bf31f6a01af8031",
-      "createdAt": "2026-06-22T16:05:17.769Z"
+      "createdAt": "2026-06-29T16:06:49.756Z"
     },
     {
       "snapshotId": "snapshot:f7e9f20ad8d0162f430b4088c9a6d14fdc06745d795bb1764be2db3a5a163364",
       "sourcePath": "src/detectors/libs.ts",
       "contentHash": "ecdc80ed333e22912d290741bda540bee59653bc8d0878645d5d380234ce8e4f",
-      "createdAt": "2026-06-22T16:05:17.769Z"
+      "createdAt": "2026-06-29T16:06:49.757Z"
     },
     {
       "snapshotId": "snapshot:57c6b22891fab362235afe282b6ad0fa2fdc3ae110338033cb7b1c3e838ffeb6",
       "sourcePath": "src/detectors/middleware.ts",
       "contentHash": "ec4512342d9d6e30def07156bc3b4f14ce8d24ec632bc1ef2fc94418d37f945f",
-      "createdAt": "2026-06-22T16:05:17.807Z"
+      "createdAt": "2026-06-29T16:06:49.807Z"
     },
     {
       "snapshotId": "snapshot:c5062feb2e9dda903a48f82acf5ccef34746a9df1be2256acdc52a504c8ecfca",
       "sourcePath": "src/detectors/openapi.ts",
       "contentHash": "cb7b6954e6ed66f0eb54659c97a04a8895aadf569fcab1e695ce2ea3ea6a576e",
-      "createdAt": "2026-06-22T16:05:17.770Z"
+      "createdAt": "2026-06-29T16:06:49.757Z"
     },
     {
       "snapshotId": "snapshot:9b0cdd3a8ee5c80c519f7e1bd9ecb9832ec6d85272f3de2715f54a1581116e32",
       "sourcePath": "src/detectors/routes.ts",
       "contentHash": "be5ba35304499779cb7070244b2e0af49cf14b90c84035751c1ac02eec4a4812",
-      "createdAt": "2026-06-22T16:05:17.771Z"
+      "createdAt": "2026-06-29T16:06:49.758Z"
     },
     {
       "snapshotId": "snapshot:548c07d5841454f361d18945c0ae223841704990ba12cbea4a9ef1b88331b813",
       "sourcePath": "src/detectors/schema.ts",
       "contentHash": "dcd91be82be275c066a7cb89e38258591fca79632a8b0cd02631b7095fc69050",
-      "createdAt": "2026-06-22T16:05:17.772Z"
+      "createdAt": "2026-06-29T16:06:49.758Z"
     },
     {
       "snapshotId": "snapshot:b34f0602c15239a11f79c8b3a80b84e911c3695912deb4e29fe16dc520416285",
       "sourcePath": "src/detectors/tokens.ts",
       "contentHash": "44ae1c2ce491b7c67f584e2c1fae758f53a2abf95829d04247d6e74aaa6bc1ca",
-      "createdAt": "2026-06-22T16:05:17.772Z"
+      "createdAt": "2026-06-29T16:06:49.758Z"
     },
     {
       "snapshotId": "snapshot:b9e0a1d5be6001e1f6b7d5457ba068b0899fec3e4608605b13897786897fe549",
       "sourcePath": "src/eval.ts",
       "contentHash": "ba57180dd5d1346f84d7bd31254bf9cc89c3e397bea3bfe82e5178d8f3bbf2a7",
-      "createdAt": "2026-06-22T16:05:17.772Z"
+      "createdAt": "2026-06-29T16:06:49.758Z"
     },
     {
       "snapshotId": "snapshot:06efbb9d28c516d34601224eecbe93bd7f9ce6481c2029eb0616a4ae99173be4",
       "sourcePath": "src/formatter.ts",
       "contentHash": "130fc76372ffa05219e9d89df9d4f1da3d205cba35a92b5912b29ce078547287",
-      "createdAt": "2026-06-22T16:05:17.773Z"
+      "createdAt": "2026-06-29T16:06:49.759Z"
     },
     {
       "snapshotId": "snapshot:5ef17d6a6e23230263762c21ad54e190c9ee5609ebaa1cd7c5420a4494437acb",
       "sourcePath": "src/generators/ai-config.ts",
       "contentHash": "58164d04bb787e95362419eb4aad9e3eb95120569e963f0e71173a0a584aeb24",
-      "createdAt": "2026-06-22T16:05:17.773Z"
+      "createdAt": "2026-06-29T16:06:49.759Z"
     },
     {
       "snapshotId": "snapshot:16573865e36f21584a51fa66fe710049f36bdc88f7ca755e14e9fcd4cd33f197",
       "sourcePath": "src/generators/html-report.ts",
       "contentHash": "0614fdd6942201b5a4d86e9ce2d87196f67de5e4461126e79b64952a12cf33cf",
-      "createdAt": "2026-06-22T16:05:17.773Z"
+      "createdAt": "2026-06-29T16:06:49.759Z"
     },
     {
       "snapshotId": "snapshot:86f323882947f609582149a371523bb601eac5a3a6099ae769928ecb34dbe95f",
       "sourcePath": "src/generators/wiki.ts",
       "contentHash": "8ae48bf381380e1a5b4e1c0e1983a7220950892791cdbccea646dbed15688b51",
-      "createdAt": "2026-06-22T16:05:17.774Z"
+      "createdAt": "2026-06-29T16:06:49.760Z"
     },
     {
       "snapshotId": "snapshot:fae7841891d9cf4713f29aa074aeac55f55f9758855263c31e0325790ed1be18",
       "sourcePath": "src/mcp-server.ts",
       "contentHash": "7a0e2ab6cc87f0c0640518392d7f35a22e26e52af9a270f6de1c49b928f34f1a",
-      "createdAt": "2026-06-22T16:05:17.774Z"
+      "createdAt": "2026-06-29T16:06:49.760Z"
     },
     {
       "snapshotId": "snapshot:c382a9dc79262873fba7e40fff2ac6e19c5b2f33ffb066a137ace2954418dd8d",
       "sourcePath": "src/monorepo/deps.ts",
       "contentHash": "87c4b339718f6bf81d9f11bb7f827f04cf23ac065b364cfbbc87cad4dca47372",
-      "createdAt": "2026-06-22T16:05:17.775Z"
+      "createdAt": "2026-06-29T16:06:49.761Z"
     },
     {
       "snapshotId": "snapshot:67b2e9a93a3bad7f3957c2c618a912328a334d94574a3cd96d97f6056b9c54b9",
       "sourcePath": "src/monorepo/discover.ts",
       "contentHash": "83590904fa55c1be50225ce03b4644216c52b52a81d4a83bf2c9a2e5933ef9b1",
-      "createdAt": "2026-06-22T16:05:17.775Z"
+      "createdAt": "2026-06-29T16:06:49.761Z"
     },
     {
       "snapshotId": "snapshot:3dd30a08768cd8ee706e82afb8f7ad38690fb3918648e3b2ee4525cb9bc10eec",
       "sourcePath": "src/monorepo/orchestrator.ts",
       "contentHash": "f94a8e0938d1b89054c08a03309cd932c0ca9971871a3680c26731c0cc597598",
-      "createdAt": "2026-06-22T16:05:17.775Z"
+      "createdAt": "2026-06-29T16:06:49.761Z"
     },
     {
       "snapshotId": "snapshot:e47b79f68b2b619abe516fe7804907918cb44c28710c2e2c3949627f1bbe0bd1",
       "sourcePath": "src/monorepo/watch.ts",
       "contentHash": "ae4223e0c4c215dba9f1ba093b72f952b450f6320a2e92dbe2234e3be287b3c6",
-      "createdAt": "2026-06-22T16:05:17.776Z"
+      "createdAt": "2026-06-29T16:06:49.761Z"
     },
     {
       "snapshotId": "snapshot:f1fb9ad88e07efa5ea4a2792bf28bd2a5e6f2f34a53227c5cab735c7f956fbc3",
       "sourcePath": "src/scanner.ts",
       "contentHash": "5814d70a43a7d6f8063c475ddc20583775e152c8dc194768ed0bc10e3635c40d",
-      "createdAt": "2026-06-22T16:05:17.798Z"
+      "createdAt": "2026-06-29T16:06:49.800Z"
     },
     {
       "snapshotId": "snapshot:716c64bdd6c71d6ea0bdb4b01dc92cace3b1438b2aa983bd4d9ac3580e0fee7d",
       "sourcePath": "src/telemetry.ts",
       "contentHash": "28a707bff9369f318ddcd4fc6e9802d4b997a6883ef1f6da7974860d1e29b15f",
-      "createdAt": "2026-06-22T16:05:17.777Z"
+      "createdAt": "2026-06-29T16:06:49.762Z"
     },
     {
       "snapshotId": "snapshot:af496829f319d931dac264fdc34c51de16d4a35cc146214f1873d1cbee6bbfef",
       "sourcePath": "src/types.ts",
       "contentHash": "af925f94cb64c7f32fbd11f68e5b1989a8aa6a62efb14281cc8cb446adaaa473",
-      "createdAt": "2026-06-22T16:05:17.796Z"
+      "createdAt": "2026-06-29T16:06:49.798Z"
     },
     {
       "snapshotId": "snapshot:a9686472a4b3beb0b2ab6ba35d95f98b18cf2b1534d445717a3e875c4b54c841",
       "sourcePath": "tests/codemap.test.ts",
       "contentHash": "e70e1a629c47e83b85ba7ef07ab03a6352aba644e3a40d7b30d3b50f28f6bb44",
-      "createdAt": "2026-06-22T16:05:17.791Z"
+      "createdAt": "2026-06-29T16:06:49.777Z"
     },
     {
       "snapshotId": "snapshot:b128479cb29eb8902521740598f6f7e9bbb9af0844057cd19d906fc59686e7f5",
       "sourcePath": "tests/detectors.test.ts",
       "contentHash": "5c7ca16e2f520f9d79b3b7289e088f4060f187a9a41faafd0749680270c7cd77",
-      "createdAt": "2026-06-22T16:05:17.737Z"
+      "createdAt": "2026-06-29T16:06:49.729Z"
     },
     {
       "snapshotId": "snapshot:d85dc19f5449cc8183844c88ec2099cbff68e0deaa161d340117b3824b0697ca",
       "sourcePath": "tests/fixtures/config-app/.env.example",
       "contentHash": "e7a440f92b2fc1daa177c7653314747bea2428ffd12900dd84c419cdf8342570",
-      "createdAt": "2026-06-22T16:05:17.792Z"
+      "createdAt": "2026-06-29T16:06:49.777Z"
     },
     {
       "snapshotId": "snapshot:0457fad7d55b3bc4a5cc0f9e979c8c12a3b2337596867841b1738cebb91d1489",
       "sourcePath": "tests/fixtures/graph-app/src/auth.ts",
       "contentHash": "302c30caa0c23e3186ce06a687b92ab30a4318828de692a018b20b9ef7f9f237",
-      "createdAt": "2026-06-22T16:05:17.807Z"
+      "createdAt": "2026-06-29T16:06:49.807Z"
     },
     {
       "snapshotId": "snapshot:b932083dd6ab937ee3d4f1bf1347231cde3afbfcea0425b6d4c29d249d8cbb43",
       "sourcePath": "tests/fixtures/graph-app/src/middleware.ts",
       "contentHash": "5c55ac2fa72b323870164c2e05f80c5d12f9d147b68373ffde24b48e22337eaf",
-      "createdAt": "2026-06-22T16:05:17.807Z"
+      "createdAt": "2026-06-29T16:06:49.807Z"
     },
     {
       "snapshotId": "snapshot:269e92eb474bfe4438c79e552acbcf9e618ae45022d116d233555fbaa93025fb",
       "sourcePath": "tests/fixtures/middleware-app/src/middleware/auth.ts",
       "contentHash": "c2a7047f5f05690eed0ae621e94b12e6f718f1174daea160c823a8d2dd823686",
-      "createdAt": "2026-06-22T16:05:17.808Z"
+      "createdAt": "2026-06-29T16:06:49.808Z"
     },
     {
       "snapshotId": "snapshot:30768e8373f6946342cfc8e4a129ed6a91e9117a243d671489f0f602dda0a1b5",
       "sourcePath": "tests/fixtures/middleware-app/src/middleware/rate-limit.ts",
       "contentHash": "024ad0f30e4fc22fca0a04d647173c0616142f0178568f18a70af5646b1fcfa8",
-      "createdAt": "2026-06-22T16:05:17.808Z"
+      "createdAt": "2026-06-29T16:06:49.808Z"
     },
     {
       "snapshotId": "snapshot:b3b523c63c108df8274dccae68c6e1c97af0a875fd23d35b21e450be9ec9d632",
       "sourcePath": "tsconfig.json",
       "contentHash": "5149f595c2e701df2d957a689d99298baf799d8923aaf3baa6f0e01fde9d17cb",
-      "createdAt": "2026-06-22T16:05:17.742Z"
+      "createdAt": "2026-06-29T16:06:49.733Z"
     }
   ]
 }
