@@ -1,5 +1,5 @@
 # Knowledge Map — Knowledge Map
-> 8 notes · 0 decisions · 2 open questions · generated 2026-06-29T16:06:50.438Z
+> 8 notes · 0 decisions · 2 open questions · generated 2026-07-06T16:04:50.696Z
 
 > **AI Primer:** This knowledge base has 15 canonical knowledge claims backed by 8 note snapshots. Key topics: how it works, how it works, install, install. 2 open questions remain.
 

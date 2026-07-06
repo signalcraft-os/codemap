@@ -1,7 +1,7 @@
 ---
 title: Knowledge Index
 view_type: knowledge_index
-generated_at: 2026-06-29T16:06:50.438Z
+generated_at: 2026-07-06T16:04:50.696Z
 claim_count: 15
 verified_claim_count: 3
 inferred_claim_count: 12
