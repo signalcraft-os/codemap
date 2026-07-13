@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-06T16:04:50.696Z",
+  "generatedAt": "2026-07-13T16:07:02.054Z",
   "policy": {
     "version": 1,
     "updatedAt": "2026-05-01T08:48:21.111Z",
@@ -12,22 +12,22 @@
     "preserveFullLedgers": true
   },
   "usage": {
-    "hotBytes": 15399753,
-    "totalBytes": 15399753,
-    "ledgerBytes": 5104857,
-    "metadataBytes": 116552,
-    "byClaimPartitionBytes": 5089172,
-    "byRunPartitionBytes": 5089172,
+    "hotBytes": 18121806,
+    "totalBytes": 18121806,
+    "ledgerBytes": 6012603,
+    "metadataBytes": 120593,
+    "byClaimPartitionBytes": 5994305,
+    "byRunPartitionBytes": 5994305,
     "archiveBytes": 0
   },
   "counts": {
-    "claimHistoryEntries": 888,
-    "verificationHistoryEntries": 4254,
-    "publishRuns": 12,
+    "claimHistoryEntries": 1036,
+    "verificationHistoryEntries": 4963,
+    "publishRuns": 14,
     "claimPartitions": 148,
     "verificationPartitions": 148,
-    "runClaimPartitions": 12,
-    "runVerificationPartitions": 12,
+    "runClaimPartitions": 14,
+    "runVerificationPartitions": 14,
     "archivedSegments": 0,
     "plannedSegments": 0
   },
