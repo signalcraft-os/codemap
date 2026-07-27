@@ -1,7 +1,7 @@
 ---
 title: CodeMap Index
 view_type: codemap_index
-generated_at: 2026-07-20T16:07:45.540Z
+generated_at: 2026-07-27T16:08:54.097Z
 claim_count: 148
 verified_claim_count: 125
 inferred_claim_count: 23

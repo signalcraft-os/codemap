@@ -1,7 +1,7 @@
 ---
 title: Impact Inventory
 view_type: code_topic
-generated_at: 2026-07-20T16:07:45.540Z
+generated_at: 2026-07-27T16:08:54.097Z
 claim_count: 20
 verified_claim_count: 20
 inferred_claim_count: 0
