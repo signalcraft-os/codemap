@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-07-27T16:08:54.097Z",
+  "generatedAt": "2026-08-03T16:06:37.341Z",
   "edges": [
     {
       "from": "src/ast/extract-android.ts",
