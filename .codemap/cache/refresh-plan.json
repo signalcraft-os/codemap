@@ -1,7 +1,7 @@
 {
   "version": 1,
   "domain": "knowledge",
-  "generatedAt": "2026-08-03T16:06:37.996Z",
+  "generatedAt": "2026-08-10T16:07:27.563Z",
   "trigger": "cli",
   "mode": "full",
   "changedFiles": [],
@@ -46,7 +46,7 @@
     "code": {
       "version": 1,
       "domain": "code",
-      "generatedAt": "2026-08-03T16:06:37.341Z",
+      "generatedAt": "2026-08-10T16:07:26.865Z",
       "trigger": "cli",
       "mode": "full",
       "changedFiles": [],
@@ -174,7 +174,7 @@
     "knowledge": {
       "version": 1,
       "domain": "knowledge",
-      "generatedAt": "2026-08-03T16:06:37.996Z",
+      "generatedAt": "2026-08-10T16:07:27.563Z",
       "trigger": "cli",
       "mode": "full",
       "changedFiles": [],
