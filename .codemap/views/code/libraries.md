@@ -1,7 +1,7 @@
 ---
 title: Library Inventory
 view_type: code_topic
-generated_at: 2026-08-10T16:07:26.865Z
+generated_at: 2026-08-17T16:08:32.622Z
 claim_count: 84
 verified_claim_count: 84
 inferred_claim_count: 0
